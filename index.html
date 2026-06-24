@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Affiliate Commission Tracker</title>
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <div class="logo-text">
+            <h1>Affiliate<span>Pay</span></h1>
+            <p>Commission Tracker & Dashboard</p>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="period-badge">
+          <span class="pulse-indicator"></span>
+          <span id="header-period-text">Periode Aktif: Loading...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Metrics Grid -->
+    <section class="metrics-grid">
+      <!-- Metric 1: Current Period Commission -->
+      <div class="metric-card highlight">
+        <div class="metric-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="12" y1="4" x2="12" y2="20"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+        </div>
+        <div class="metric-info">
+          <p class="metric-label">Komisi Periode Ini</p>
+          <h2 class="metric-value text-emerald" id="stat-current-commission">Rp 0</h2>
+          <p class="metric-subtext" id="stat-period-date-range">26 --- s/d 25 ---</p>
+        </div>
+      </div>
+
+      <!-- Metric 2: Total Sales -->
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        </div>
+        <div class="metric-info">
+          <p class="metric-label">Jumlah Penjualan</p>
+          <h2 class="metric-value" id="stat-sales-count">0</h2>
+          <p class="metric-subtext" id="stat-sales-count-subtext">Transaksi sukses periode ini</p>
+        </div>
+      </div>
+
+      <!-- Metric 3: Countdown to Reset (Tanggal 25) -->
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </div>
+        <div class="metric-info">
+          <p class="metric-label">Siklus Pembayaran</p>
+          <h2 class="metric-value text-amber" id="stat-countdown">-- Hari lagi</h2>
+          <p class="metric-subtext">Hingga cut-off tanggal 25</p>
+        </div>
+      </div>
+
+      <!-- Metric 4: All-Time Commissions -->
+      <div class="metric-card">
+        <div class="metric-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+        </div>
+        <div class="metric-info">
+          <p class="metric-label">Total Komisi (All-Time)</p>
+          <h2 class="metric-value text-indigo" id="stat-all-time-commission">Rp 0</h2>
+          <p class="metric-subtext" id="stat-all-time-count">Dari 0 total penjualan</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+      <!-- Left Column: Input Form -->
+      <div class="workspace-card form-container">
+        <div class="card-header">
+          <h3>Input Data Penjualan</h3>
+          <p>Masukkan detail penjualan baru Anda untuk menghitung komisi secara otomatis.</p>
+        </div>
+        
+        <form id="sale-form">
+          <input type="hidden" id="edit-id" value="">
+          
+          <!-- Tanggal Transaksi -->
+          <div class="form-group">
+            <label for="sale-date">Tanggal Penjualan</label>
+            <input type="date" id="sale-date" required>
+          </div>
+
+          <!-- Pilihan Produk -->
+          <div class="form-group">
+            <label for="sale-product">Produk</label>
+            <div class="select-wrapper">
+              <select id="sale-product" required>
+                <option value="" disabled selected>Pilih Produk...</option>
+                <option value="AKADEMI MARKETER">AKADEMI MARKETER</option>
+                <option value="AKADEMI CREATOR">AKADEMI CREATOR</option>
+                <option value="AKADEMI PAJAK">AKADEMI PAJAK</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Input Harga (Format Rupiah otomatis) -->
+          <div class="form-group">
+            <label for="sale-price">Harga Produk (IDR)</label>
+            <div class="input-icon-wrapper">
+              <span class="input-prefix">Rp</span>
+              <input type="text" id="sale-price" placeholder="Contoh: 1.500.000" required autocomplete="off">
+            </div>
+            <small class="form-help">Harga bersih setelah diskon jika ada.</small>
+          </div>
+
+          <!-- Pilihan Kupon -->
+          <div class="form-group">
+            <label>Kupon Affiliate</label>
+            <div class="coupon-grid">
+              <label class="coupon-btn">
+                <input type="radio" name="sale-coupon" value="5" checked>
+                <div class="coupon-btn-content">
+                  <span class="coupon-pct">Kupon 5%</span>
+                  <span class="commission-pct">Komisi 20%</span>
+                </div>
+              </label>
+              <label class="coupon-btn">
+                <input type="radio" name="sale-coupon" value="10">
+                <div class="coupon-btn-content">
+                  <span class="coupon-pct">Kupon 10%</span>
+                  <span class="commission-pct">Komisi 15%</span>
+                </div>
+              </label>
+              <label class="coupon-btn">
+                <input type="radio" name="sale-coupon" value="15">
+                <div class="coupon-btn-content">
+                  <span class="coupon-pct">Kupon 15%</span>
+                  <span class="commission-pct">Komisi 10%</span>
+                </div>
+              </label>
+              <label class="coupon-btn">
+                <input type="radio" name="sale-coupon" value="20">
+                <div class="coupon-btn-content">
+                  <span class="coupon-pct">Kupon 20%</span>
+                  <span class="commission-pct">Komisi 10%</span>
+                </div>
+              </label>
+              <label class="coupon-btn">
+                <input type="radio" name="sale-coupon" value="25">
+                <div class="coupon-btn-content">
+                  <span class="coupon-pct">Kupon 25%</span>
+                  <span class="commission-pct">Komisi 10%</span>
+                </div>
+              </label>
+              <label class="coupon-btn">
+                <input type="radio" name="sale-coupon" value="custom">
+                <div class="coupon-btn-content">
+                  <span class="coupon-pct">Custom %</span>
+                  <span class="commission-pct">Atur Sendiri</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Custom Commission Input (Hidden by default, shown when custom selected) -->
+          <div class="form-group hidden" id="custom-commission-group">
+            <label for="custom-commission-rate">Persentase Komisi Kustom (%)</label>
+            <input type="number" id="custom-commission-rate" min="0" max="100" placeholder="Contoh: 12">
+          </div>
+
+          <!-- Deskripsi Transaksi -->
+          <div class="form-group">
+            <label for="sale-description">Deskripsi / Catatan</label>
+            <textarea id="sale-description" rows="3" placeholder="Masukkan nama pembeli, email, nomor invoice, atau catatan lainnya..."></textarea>
+          </div>
+
+          <!-- Live Commission Preview -->
+          <div class="commission-preview-card">
+            <div class="preview-row">
+              <span>Rate Komisi:</span>
+              <strong id="preview-rate">20%</strong>
+            </div>
+            <div class="preview-row total">
+              <span>Estimasi Komisi:</span>
+              <strong id="preview-amount" class="text-emerald">Rp 0</strong>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="btn-reset-form" class="btn btn-secondary hidden">Batal Edit</button>
+            <button type="submit" id="btn-submit" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Simpan Transaksi</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right Column: Data View & Tables -->
+      <div class="workspace-card data-container">
+        <div class="card-header-actions">
+          <div class="card-title-group">
+            <h3>Daftar Transaksi Affiliate</h3>
+            <p>Kelola data penjualan dan pantau performa komisi bulanan Anda.</p>
+          </div>
+          
+          <!-- Period Selector Dropdown -->
+          <div class="period-filter-wrapper">
+            <label for="period-filter">Periode:</label>
+            <div class="select-wrapper filter">
+              <select id="period-filter">
+                <!-- Javascript will populate this with dynamically created periods -->
+                <option value="current">Periode Aktif Ini</option>
+                <option value="all">Semua Periode</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls Toolbar -->
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="search-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="search-input" placeholder="Cari produk, deskripsi..." list="product-suggestions" autocomplete="off">
+              <datalist id="product-suggestions">
+                <option value="AKADEMI MARKETER"></option>
+                <option value="AKADEMI CREATOR"></option>
+                <option value="AKADEMI PAJAK"></option>
+              </datalist>
+            </div>
+            <div class="select-wrapper filter">
+              <select id="product-filter">
+                <option value="all">Semua Produk</option>
+                <option value="AKADEMI MARKETER">AKADEMI MARKETER</option>
+                <option value="AKADEMI CREATOR">AKADEMI CREATOR</option>
+                <option value="AKADEMI PAJAK">AKADEMI PAJAK</option>
+              </select>
+            </div>
+          </div>
+          <div class="toolbar-actions">
+            <button id="btn-export-csv" class="btn btn-tool" title="Ekspor data ke file CSV">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>CSV</span>
+            </button>
+            
+            <div class="dropdown-container">
+              <button id="btn-backup-menu" class="btn btn-tool">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                <span>Backup</span>
+              </button>
+              <div class="dropdown-menu" id="backup-dropdown">
+                <button id="btn-backup-export" class="dropdown-item">Ekspor Data (.json)</button>
+                <button id="btn-backup-import" class="dropdown-item">Impor Data (.json)</button>
+                <input type="file" id="file-import" accept=".json" style="display: none;">
+              </div>
+            </div>
+
+            <button id="btn-reset-data" class="btn btn-danger-tool" title="Hapus seluruh data periode aktif">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+          <table class="data-table" id="sales-table">
+            <thead>
+              <tr>
+                <th style="width: 12%;">Tanggal</th>
+                <th style="width: 25%;">Produk</th>
+                <th style="width: 18%; text-align: right;">Harga</th>
+                <th style="width: 12%; text-align: center;">Kupon / Rate</th>
+                <th style="width: 18%; text-align: right;">Komisi</th>
+                <th style="width: 20%;">Deskripsi</th>
+                <th style="width: 10%; text-align: center;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="sales-tbody">
+              <!-- Dynamically populated rows -->
+              <tr class="empty-state">
+                <td colspan="7">
+                  <div class="empty-state-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <p>Belum ada data penjualan pada periode ini.</p>
+                    <small>Silakan tambahkan data penjualan menggunakan form di sebelah kiri.</small>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer Summary -->
+        <div class="table-footer-summary">
+          <div class="footer-summary-item">
+            <span>Subtotal Harga:</span>
+            <strong id="table-summary-total-price">Rp 0</strong>
+          </div>
+          <div class="footer-summary-item highlight">
+            <span>Total Komisi Periode Terpilih:</span>
+            <strong id="table-summary-total-commission" class="text-emerald">Rp 0</strong>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Confirmation Dialog Backdrop -->
+  <div id="confirm-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h4 id="confirm-title">Konfirmasi</h4>
+      <p id="confirm-message">Apakah Anda yakin ingin melakukan tindakan ini?</p>
+      <div class="modal-actions">
+        <button id="confirm-btn-cancel" class="btn btn-secondary">Batal</button>
+        <button id="confirm-btn-yes" class="btn btn-danger">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
