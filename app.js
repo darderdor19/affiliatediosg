@@ -17,19 +17,29 @@ window.switchTab = function(tab) {
   const panelTable = document.getElementById('panel-table');
   const btnForm = document.getElementById('tab-btn-form');
   const btnTable = document.getElementById('tab-btn-table');
+  if (!panelForm || !panelTable) return;
 
   if (tab === 'form') {
     panelForm.classList.remove('panel-hidden');
     panelTable.classList.add('panel-hidden');
-    btnForm.classList.add('active');
-    btnTable.classList.remove('active');
+    if (btnForm) btnForm.classList.add('active');
+    if (btnTable) btnTable.classList.remove('active');
   } else {
     panelTable.classList.remove('panel-hidden');
     panelForm.classList.add('panel-hidden');
-    btnTable.classList.add('active');
-    btnForm.classList.remove('active');
+    if (btnTable) btnTable.classList.add('active');
+    if (btnForm) btnForm.classList.remove('active');
   }
 };
+
+// Apply initial mobile tab state
+function initMobileTabs() {
+  if (window.innerWidth <= 1100) {
+    // On mobile, start with form visible, table hidden
+    const panelTable = document.getElementById('panel-table');
+    if (panelTable) panelTable.classList.add('panel-hidden');
+  }
+}
 
 // Firebase Connection Instance
 let db = null;
@@ -49,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize UI components and event listeners immediately
   initEventListeners();
+  initMobileTabs();
   
   // Calculate and update metrics with empty/local data first
   updateDashboard();
@@ -858,6 +869,10 @@ window.editSale = function(id) {
   }
 
   updatePreview();
+  // On mobile: switch to form tab so user can see the edit form
+  if (window.innerWidth <= 1100) {
+    switchTab('form');
+  }
   document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -869,7 +884,8 @@ function cancelFormEdit() {
   const resetFormBtn = document.getElementById('btn-reset-form');
   const submitBtnText = document.getElementById('btn-submit').querySelector('span');
 
-  form.reset();\n  editIdEl.value = '';
+  form.reset();
+  editIdEl.value = '';
   customRateGroup.classList.add('hidden');
   resetFormBtn.classList.add('hidden');
   submitBtnText.textContent = 'Simpan Transaksi';
