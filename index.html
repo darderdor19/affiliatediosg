@@ -119,14 +119,24 @@
             </div>
           </div>
 
-          <!-- Input Harga (Format Rupiah otomatis) -->
+          <!-- Input Harga Normal -->
           <div class="form-group">
-            <label for="sale-price">Harga Produk (IDR)</label>
+            <label for="sale-price">Harga Normal (IDR)</label>
             <div class="input-icon-wrapper">
               <span class="input-prefix">Rp</span>
               <input type="text" id="sale-price" placeholder="Contoh: 1.500.000" required autocomplete="off">
             </div>
-            <small class="form-help">Harga bersih setelah diskon jika ada.</small>
+            <small class="form-help">Harga asli produk sebelum kupon diterapkan.</small>
+          </div>
+
+          <!-- Harga Deal (auto-calculated, read-only) -->
+          <div class="form-group">
+            <label for="sale-deal-price">Harga Deal (IDR)</label>
+            <div class="input-icon-wrapper">
+              <span class="input-prefix">Rp</span>
+              <input type="text" id="sale-deal-price" placeholder="Otomatis dihitung" readonly style="opacity:0.7; cursor:not-allowed;">
+            </div>
+            <small class="form-help">Harga setelah potongan kupon affiliate.</small>
           </div>
 
           <!-- Pilihan Kupon -->
@@ -192,6 +202,14 @@
 
           <!-- Live Commission Preview -->
           <div class="commission-preview-card">
+            <div class="preview-row">
+              <span>Harga Normal:</span>
+              <strong id="preview-normal-price">Rp 0</strong>
+            </div>
+            <div class="preview-row">
+              <span>Harga Deal (setelah kupon):</span>
+              <strong id="preview-deal-price" class="text-amber">Rp 0</strong>
+            </div>
             <div class="preview-row">
               <span>Rate Komisi:</span>
               <strong id="preview-rate">20%</strong>
@@ -284,19 +302,20 @@
           <table class="data-table" id="sales-table">
             <thead>
               <tr>
-                <th style="width: 12%;">Tanggal</th>
-                <th style="width: 25%;">Produk</th>
-                <th style="width: 18%; text-align: right;">Harga</th>
-                <th style="width: 12%; text-align: center;">Kupon / Rate</th>
-                <th style="width: 18%; text-align: right;">Komisi</th>
-                <th style="width: 20%;">Deskripsi</th>
-                <th style="width: 10%; text-align: center;">Aksi</th>
+                <th style="width: 10%;">Tanggal</th>
+                <th style="width: 18%;">Produk</th>
+                <th style="width: 13%; text-align: right;">Harga Normal</th>
+                <th style="width: 13%; text-align: right;">Harga Deal</th>
+                <th style="width: 10%; text-align: center;">Kupon / Rate</th>
+                <th style="width: 13%; text-align: right;">Komisi</th>
+                <th style="width: 14%;">Deskripsi</th>
+                <th style="width: 9%; text-align: center;">Aksi</th>
               </tr>
             </thead>
             <tbody id="sales-tbody">
               <!-- Dynamically populated rows -->
               <tr class="empty-state">
-                <td colspan="7">
+                <td colspan="8">
                   <div class="empty-state-content">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                     <p>Belum ada data penjualan pada periode ini.</p>

@@ -93,11 +93,15 @@ async function loadSalesData() {
     if (val) {
       Object.keys(val).forEach(key => {
         const data = val[key];
+        const normalPrice = Number(data.normalPrice || data.price || 0);
+        const dealPrice = Number(data.dealPrice || data.price || 0);
         salesData.push({
           id: key,
           date: data.date,
           product: data.product,
-          price: Number(data.price),
+          normalPrice: normalPrice,
+          dealPrice: dealPrice,
+          price: normalPrice, // backward compat
           coupon: data.coupon,
           commissionRate: Number(data.commissionRate),
           commissionAmount: Number(data.commissionAmount),
@@ -309,13 +313,40 @@ function getCouponText(couponVal) {
 // Update the commission previews dynamically on the form
 function updatePreview() {
   const priceInput = document.getElementById('sale-price');
+  const dealPriceInput = document.getElementById('sale-deal-price');
+  const previewNormalPrice = document.getElementById('preview-normal-price');
+  const previewDealPrice = document.getElementById('preview-deal-price');
   const previewRate = document.getElementById('preview-rate');
   const previewAmount = document.getElementById('preview-amount');
 
-  const price = getRawNumber(priceInput.value);
-  const ratePct = getSelectedCommissionRate();
-  const commission = Math.round(price * (ratePct / 100));
+  const normalPrice = getRawNumber(priceInput.value);
 
+  // Get selected coupon %
+  const couponRadios = document.getElementsByName('sale-coupon');
+  let couponVal = '5';
+  for (let radio of couponRadios) {
+    if (radio.checked) { couponVal = radio.value; break; }
+  }
+
+  // Harga Deal = Harga Normal × (1 - kupon%)
+  let couponDiscount = 0;
+  if (couponVal !== 'custom') {
+    couponDiscount = parseFloat(couponVal) || 0;
+  }
+  const dealPrice = Math.round(normalPrice * (1 - couponDiscount / 100));
+
+  // Commission rate based on coupon
+  const ratePct = getSelectedCommissionRate();
+
+  // Komisi = Harga Deal × rate komisi%
+  const commission = Math.round(dealPrice * (ratePct / 100));
+
+  // Update form read-only field
+  dealPriceInput.value = dealPrice > 0 ? formatNumberRupiah(dealPrice) : '';
+
+  // Update preview card
+  previewNormalPrice.textContent = formatFullRupiah(normalPrice);
+  previewDealPrice.textContent = formatFullRupiah(dealPrice);
   previewRate.textContent = `${ratePct}%`;
   previewAmount.textContent = formatFullRupiah(commission);
 }
@@ -608,23 +639,26 @@ function renderSalesTable() {
     });
 
     filteredSales.forEach(sale => {
-      subtotalPrice += sale.price;
+      subtotalPrice += (sale.normalPrice || sale.price);
       subtotalCommission += sale.commissionAmount;
 
       const row = document.createElement('tr');
       row.id = `row-${sale.id}`;
 
-      // Coupon Badge Class styling
       let couponBadgeClass = 'table-coupon-badge';
       if (sale.coupon === '5') couponBadgeClass += ' pct-5';
       else if (sale.coupon === '10') couponBadgeClass += ' pct-10';
+
+      const normalPrice = sale.normalPrice || sale.price;
+      const dealPrice = sale.dealPrice || sale.price;
 
       row.innerHTML = `
         <td class="table-date">${formatDisplayDate(sale.date)}</td>
         <td>
           <div class="table-product">${escapeHTML(sale.product)}</div>
         </td>
-        <td style="text-align: right;" class="table-price">${formatNumberRupiah(sale.price)}</td>
+        <td style="text-align: right;" class="table-price">${formatNumberRupiah(normalPrice)}</td>
+        <td style="text-align: right; color: var(--amber);">${formatNumberRupiah(dealPrice)}</td>
         <td style="text-align: center;">
           <div class="${couponBadgeClass}">${escapeHTML(getCouponText(sale.coupon))}</div>
           <div style="font-size: 10px; color: var(--text-muted-dark); font-weight:600; margin-top:2px;">Rate: ${sale.commissionRate}%</div>
@@ -675,11 +709,10 @@ async function handleFormSubmit(e) {
   const productSelect = document.getElementById('sale-product').value;
   const priceInput = document.getElementById('sale-price').value;
   const descInput = document.getElementById('sale-description').value;
-  const customRateInput = document.getElementById('custom-commission-rate').value;
 
-  const price = getRawNumber(priceInput);
-  if (price <= 0) {
-    showToast("Harga produk harus lebih dari Rp 0", "error");
+  const normalPrice = getRawNumber(priceInput);
+  if (normalPrice <= 0) {
+    showToast("Harga normal produk harus lebih dari Rp 0", "error");
     return;
   }
 
@@ -693,19 +726,28 @@ async function handleFormSubmit(e) {
     }
   }
 
+  // Harga Deal = Harga Normal × (1 - kupon%)
+  let couponDiscount = 0;
+  if (couponVal !== 'custom') {
+    couponDiscount = parseFloat(couponVal) || 0;
+  }
+  const dealPrice = Math.round(normalPrice * (1 - couponDiscount / 100));
+
   const rate = getSelectedCommissionRate();
-  const commission = Math.round(price * (rate / 100));
+  // Komisi = Harga Deal × rate komisi%
+  const commission = Math.round(dealPrice * (rate / 100));
   const period = getPeriodLabel(dateInput);
 
   const isEdit = editIdEl.value !== '';
 
   if (isEdit) {
-    // Find index
     const index = salesData.findIndex(item => item.id === editIdEl.value);
     if (index !== -1) {
       salesData[index].date = dateInput;
       salesData[index].product = productSelect;
-      salesData[index].price = price;
+      salesData[index].normalPrice = normalPrice;
+      salesData[index].dealPrice = dealPrice;
+      salesData[index].price = normalPrice;
       salesData[index].coupon = couponVal;
       salesData[index].commissionRate = rate;
       salesData[index].commissionAmount = commission;
@@ -718,12 +760,13 @@ async function handleFormSubmit(e) {
       showToast("Gagal memperbarui data. ID tidak ditemukan.", "error");
     }
   } else {
-    // Generate new entry
     const newSale = {
       id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
       date: dateInput,
       product: productSelect,
-      price: price,
+      normalPrice: normalPrice,
+      dealPrice: dealPrice,
+      price: normalPrice,
       coupon: couponVal,
       commissionRate: rate,
       commissionAmount: commission,
@@ -736,8 +779,7 @@ async function handleFormSubmit(e) {
     showToast("Data penjualan baru berhasil disimpan!");
   }
 
-  // Cleanup
-  cancelFormEdit(); // Reset form states
+  cancelFormEdit();
   updateDashboard();
   populatePeriodFilter();
   renderSalesTable();
@@ -748,28 +790,22 @@ window.editSale = function(id) {
   const sale = salesData.find(item => item.id === id);
   if (!sale) return;
 
-  // Show cancel button, change text of submit button
   document.getElementById('btn-reset-form').classList.remove('hidden');
   document.getElementById('btn-submit').querySelector('span').textContent = 'Perbarui Transaksi';
   
-  // Populate fields
   document.getElementById('edit-id').value = sale.id;
   document.getElementById('sale-date').value = sale.date;
   document.getElementById('sale-product').value = sale.product;
-  document.getElementById('sale-price').value = formatNumberRupiah(sale.price);
+  // Populate with normalPrice (harga asli), dealPrice will auto-recalculate
+  document.getElementById('sale-price').value = formatNumberRupiah(sale.normalPrice || sale.price);
   document.getElementById('sale-description').value = sale.description;
 
-  // Set radio value
   const couponRadios = document.getElementsByName('sale-coupon');
   const customRateGroup = document.getElementById('custom-commission-group');
   const customRateInput = document.getElementById('custom-commission-rate');
 
   couponRadios.forEach(radio => {
-    if (radio.value === sale.coupon) {
-      radio.checked = true;
-    } else {
-      radio.checked = false;
-    }
+    radio.checked = radio.value === sale.coupon;
   });
 
   if (sale.coupon === 'custom') {
@@ -782,10 +818,7 @@ window.editSale = function(id) {
     customRateInput.value = '';
   }
 
-  // Update previews
   updatePreview();
-  
-  // Scroll to form on mobile viewports
   document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -935,12 +968,13 @@ function exportToCSV() {
   exportData.sort((a, b) => b.date.localeCompare(a.date));
 
   // CSV content assembly
-  let csvContent = "Tanggal,Nama Produk,Harga Produk (IDR),Kupon,Rate Komisi (%),Jumlah Komisi (IDR),Catatan / Deskripsi\n";
+  let csvContent = "Tanggal,Nama Produk,Harga Normal (IDR),Harga Deal (IDR),Kupon,Rate Komisi (%),Jumlah Komisi (IDR),Catatan / Deskripsi\n";
 
   exportData.forEach(sale => {
-    // Sanitize quotes in description
-    const descSanitized = sale.description.replace(/"/g, '""');
-    csvContent += `"${sale.date}","${sale.product}",${sale.price},"${getCouponText(sale.coupon)}",${sale.commissionRate},${sale.commissionAmount},"${descSanitized}"\n`;
+    const descSanitized = (sale.description || '').replace(/"/g, '""');
+    const normalPrice = sale.normalPrice || sale.price;
+    const dealPrice = sale.dealPrice || sale.price;
+    csvContent += `"${sale.date}","${sale.product}",${normalPrice},${dealPrice},"${getCouponText(sale.coupon)}",${sale.commissionRate},${sale.commissionAmount},"${descSanitized}"\n`;
   });
 
   // Include Excel UTF-8 BOM representation
