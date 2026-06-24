@@ -272,7 +272,7 @@ function formatFullRupiah(num) {
 // Get the commission rate percentage based on coupon
 function getSelectedCommissionRate() {
   const couponRadios = document.getElementsByName('sale-coupon');
-  let selectedValue = '5';
+  let selectedValue = '0';
   
   for (let radio of couponRadios) {
     if (radio.checked) {
@@ -288,10 +288,12 @@ function getSelectedCommissionRate() {
   }
 
   // Business Rules:
+  // Kupon 0% (Tanpa Kupon) -> Komisi 20%
   // Kupon 5% -> Komisi 20%
   // Kupon 10% -> Komisi 15%
   // Kupon 15%, 20%, 25% -> Komisi 10%
   const ruleMap = {
+    '0': 20,
     '5': 20,
     '10': 15,
     '15': 10,
@@ -323,7 +325,7 @@ function updatePreview() {
 
   // Get selected coupon %
   const couponRadios = document.getElementsByName('sale-coupon');
-  let couponVal = '5';
+  let couponVal = '0';
   for (let radio of couponRadios) {
     if (radio.checked) { couponVal = radio.value; break; }
   }
@@ -718,7 +720,7 @@ async function handleFormSubmit(e) {
 
   // Read selected coupon value
   const couponRadios = document.getElementsByName('sale-coupon');
-  let couponVal = '5';
+  let couponVal = '0';
   for (let radio of couponRadios) {
     if (radio.checked) {
       couponVal = radio.value;
