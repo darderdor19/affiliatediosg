@@ -54,7 +54,7 @@ const firebaseConfig = {
 // ---- GOOGLE SHEETS WEBHOOK ----
 // Paste URL web app Apps Script kamu di sini setelah deploy
 // Contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
-const SHEETS_WEBHOOK_URL = '';
+const SHEETS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyGPfRk84myluBPoodVGq_e60yf2wIx9qOrCPQ5xmrzIFY7aQbkIXJQCW1lk_tuCx0Q/exec';
 
 // Kirim sinyal ke Apps Script supaya sheet langsung update
 function triggerSheetsSync() {
