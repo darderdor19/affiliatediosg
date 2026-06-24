@@ -51,6 +51,19 @@ const firebaseConfig = {
   authDomain: "affiliatediosg.firebaseapp.com"
 };
 
+// ---- GOOGLE SHEETS WEBHOOK ----
+// Paste URL web app Apps Script kamu di sini setelah deploy
+// Contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
+const SHEETS_WEBHOOK_URL = '';
+
+// Kirim sinyal ke Apps Script supaya sheet langsung update
+function triggerSheetsSync() {
+  if (!SHEETS_WEBHOOK_URL) return;
+  // fire-and-forget: tidak perlu tunggu response
+  fetch(SHEETS_WEBHOOK_URL, { mode: 'no-cors' }).catch(() => {});
+}
+
+
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
   // Set default date input to today
@@ -152,6 +165,7 @@ async function saveSaleRecord(sale) {
   if (!db) return;
   try {
     await db.ref(`sales_transactions/${sale.id}`).set(sale);
+    triggerSheetsSync(); // update Google Sheet
   } catch (e) {
     console.error("Realtime DB Save Error:", e);
     showToast("Gagal menyimpan ke Cloud Firebase.", "error");
@@ -162,6 +176,7 @@ async function deleteSaleRecord(id) {
   if (!db) return;
   try {
     await db.ref(`sales_transactions/${id}`).remove();
+    triggerSheetsSync(); // update Google Sheet
   } catch (e) {
     console.error("Realtime DB Delete Error:", e);
     showToast("Gagal menghapus dari Cloud Firebase.", "error");
