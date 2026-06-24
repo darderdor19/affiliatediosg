@@ -11,6 +11,26 @@ const MONTH_NAMES_ID = [
 let salesData = [];
 let currentEditingId = null;
 
+// --- MOBILE TAB SWITCHER ---
+window.switchTab = function(tab) {
+  const panelForm = document.getElementById('panel-form');
+  const panelTable = document.getElementById('panel-table');
+  const btnForm = document.getElementById('tab-btn-form');
+  const btnTable = document.getElementById('tab-btn-table');
+
+  if (tab === 'form') {
+    panelForm.classList.remove('panel-hidden');
+    panelTable.classList.add('panel-hidden');
+    btnForm.classList.add('active');
+    btnTable.classList.remove('active');
+  } else {
+    panelTable.classList.remove('panel-hidden');
+    panelForm.classList.add('panel-hidden');
+    btnTable.classList.add('active');
+    btnForm.classList.remove('active');
+  }
+};
+
 // Firebase Connection Instance
 let db = null;
 const firebaseConfig = {
@@ -186,11 +206,12 @@ function initEventListeners() {
     radio.addEventListener('change', (e) => {
       if (e.target.value === 'custom') {
         customRateGroup.classList.remove('hidden');
-        customRateInput.setAttribute('required', 'required');
       } else {
         customRateGroup.classList.add('hidden');
         customRateInput.removeAttribute('required');
         customRateInput.value = '';
+        // Clear custom discount too
+        document.getElementById('custom-discount-rate').value = '';
       }
       updatePreview();
     });
@@ -198,6 +219,10 @@ function initEventListeners() {
 
   // Custom rate input change handler
   customRateInput.addEventListener('input', updatePreview);
+
+  // Custom discount input change handler
+  const customDiscountInput = document.getElementById('custom-discount-rate');
+  customDiscountInput.addEventListener('input', updatePreview);
 
   // Form Submission
   form.addEventListener('submit', handleFormSubmit);
@@ -284,7 +309,8 @@ function getSelectedCommissionRate() {
   if (selectedValue === 'custom') {
     const customInput = document.getElementById('custom-commission-rate');
     const customVal = parseFloat(customInput.value);
-    return isNaN(customVal) ? 0 : customVal;
+    // If blank, fallback to 20%
+    return isNaN(customVal) ? 20 : customVal;
   }
 
   // Business Rules:
@@ -330,9 +356,13 @@ function updatePreview() {
     if (radio.checked) { couponVal = radio.value; break; }
   }
 
-  // Harga Deal = Harga Normal × (1 - kupon%)
+  // Harga Deal = Harga Normal × (1 - diskon%)
   let couponDiscount = 0;
-  if (couponVal !== 'custom') {
+  if (couponVal === 'custom') {
+    // Read custom discount field (optional)
+    const customDiscountVal = parseFloat(document.getElementById('custom-discount-rate').value);
+    couponDiscount = isNaN(customDiscountVal) ? 0 : customDiscountVal;
+  } else if (couponVal !== 'custom') {
     couponDiscount = parseFloat(couponVal) || 0;
   }
   const dealPrice = Math.round(normalPrice * (1 - couponDiscount / 100));
@@ -728,9 +758,12 @@ async function handleFormSubmit(e) {
     }
   }
 
-  // Harga Deal = Harga Normal × (1 - kupon%)
+  // Harga Deal = Harga Normal × (1 - diskon%)
   let couponDiscount = 0;
-  if (couponVal !== 'custom') {
+  if (couponVal === 'custom') {
+    const customDiscountVal = parseFloat(document.getElementById('custom-discount-rate').value);
+    couponDiscount = isNaN(customDiscountVal) ? 0 : customDiscountVal;
+  } else {
     couponDiscount = parseFloat(couponVal) || 0;
   }
   const dealPrice = Math.round(normalPrice * (1 - couponDiscount / 100));
@@ -785,6 +818,10 @@ async function handleFormSubmit(e) {
   updateDashboard();
   populatePeriodFilter();
   renderSalesTable();
+  // On mobile: switch to table tab after saving
+  if (window.innerWidth <= 1100) {
+    switchTab('table');
+  }
 }
 
 // Edit a sale entry - Populate form with item details
@@ -832,11 +869,11 @@ function cancelFormEdit() {
   const resetFormBtn = document.getElementById('btn-reset-form');
   const submitBtnText = document.getElementById('btn-submit').querySelector('span');
 
-  form.reset();
-  editIdEl.value = '';
+  form.reset();\n  editIdEl.value = '';
   customRateGroup.classList.add('hidden');
   resetFormBtn.classList.add('hidden');
   submitBtnText.textContent = 'Simpan Transaksi';
+  document.getElementById('custom-discount-rate').value = '';
 
   // Set date back to today
   const today = new Date();

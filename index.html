@@ -88,10 +88,22 @@
       </div>
     </section>
 
+    <!-- Mobile Tab Navigation (only visible on mobile) -->
+    <div class="mobile-tab-nav" id="mobile-tab-nav">
+      <button class="mobile-tab-btn active" id="tab-btn-form" onclick="switchTab('form')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Input Data
+      </button>
+      <button class="mobile-tab-btn" id="tab-btn-table" onclick="switchTab('table')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+        Daftar Transaksi
+      </button>
+    </div>
+
     <!-- Main Workspace -->
     <main class="main-workspace">
       <!-- Left Column: Input Form -->
-      <div class="workspace-card form-container">
+      <div class="workspace-card form-container" id="panel-form">
         <div class="card-header">
           <h3>Input Data Penjualan</h3>
           <p>Masukkan detail penjualan baru Anda untuk menghitung komisi secara otomatis.</p>
@@ -195,10 +207,20 @@
             </div>
           </div>
 
-          <!-- Custom Commission Input (Hidden by default, shown when custom selected) -->
+          <!-- Custom Commission & Diskon Input -->
           <div class="form-group hidden" id="custom-commission-group">
-            <label for="custom-commission-rate">Persentase Komisi Kustom (%)</label>
-            <input type="number" id="custom-commission-rate" min="0" max="100" placeholder="Contoh: 12">
+            <div class="custom-fields-grid">
+              <div>
+                <label for="custom-discount-rate">Diskon Kupon Kustom (%)</label>
+                <input type="number" id="custom-discount-rate" min="0" max="100" placeholder="Contoh: 7 (opsional)" autocomplete="off">
+                <small class="form-help">Kosongkan jika tidak ada diskon.</small>
+              </div>
+              <div>
+                <label for="custom-commission-rate">Komisi Kustom (%)</label>
+                <input type="number" id="custom-commission-rate" min="0" max="100" placeholder="Contoh: 12 (opsional)" autocomplete="off">
+                <small class="form-help">Kosongkan untuk pakai rate default.</small>
+              </div>
+            </div>
           </div>
 
           <!-- Deskripsi Transaksi -->
@@ -238,7 +260,7 @@
       </div>
 
       <!-- Right Column: Data View & Tables -->
-      <div class="workspace-card data-container">
+      <div class="workspace-card data-container" id="panel-table">
         <div class="card-header-actions">
           <div class="card-title-group">
             <h3>Daftar Transaksi Affiliate</h3>
