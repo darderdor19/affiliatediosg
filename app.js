@@ -559,6 +559,32 @@ function updateDashboard() {
   document.getElementById('stat-sales-count').textContent = currentPeriodSalesCount;
   document.getElementById('stat-all-time-commission').textContent = formatFullRupiah(allTimeCommission);
   document.getElementById('stat-all-time-count').textContent = `Dari ${allTimeSalesCount} total penjualan`;
+
+  // Splits for current period
+  const currentDeduction = Math.round(currentPeriodCommission * 0.207);
+  const currentNet = currentPeriodCommission - currentDeduction;
+  const currentDiosg = Math.round(currentNet * 0.60);
+  const currentAldi = Math.round(currentNet * 0.20);
+  const currentJoko = Math.round(currentNet * 0.20);
+
+  document.getElementById('stat-current-deduction').textContent = `-Rp ${formatNumberRupiah(currentDeduction)}`;
+  document.getElementById('stat-current-net').textContent = formatFullRupiah(currentNet);
+  document.getElementById('stat-current-diosg').textContent = formatFullRupiah(currentDiosg);
+  document.getElementById('stat-current-aldi').textContent = formatFullRupiah(currentAldi);
+  document.getElementById('stat-current-joko').textContent = formatFullRupiah(currentJoko);
+
+  // Splits for all-time
+  const allTimeDeduction = Math.round(allTimeCommission * 0.207);
+  const allTimeNet = allTimeCommission - allTimeDeduction;
+  const allTimeDiosg = Math.round(allTimeNet * 0.60);
+  const allTimeAldi = Math.round(allTimeNet * 0.20);
+  const allTimeJoko = Math.round(allTimeNet * 0.20);
+
+  document.getElementById('stat-alltime-deduction').textContent = `-Rp ${formatNumberRupiah(allTimeDeduction)}`;
+  document.getElementById('stat-alltime-net').textContent = formatFullRupiah(allTimeNet);
+  document.getElementById('stat-alltime-diosg').textContent = formatFullRupiah(allTimeDiosg);
+  document.getElementById('stat-alltime-aldi').textContent = formatFullRupiah(allTimeAldi);
+  document.getElementById('stat-alltime-joko').textContent = formatFullRupiah(allTimeJoko);
 }
 
 // Populate period options in the filtering dropdown
@@ -744,6 +770,19 @@ function renderSalesTable() {
   // Update table subtotals
   subtotalPriceEl.textContent = formatFullRupiah(subtotalPrice);
   subtotalCommEl.textContent = formatFullRupiah(subtotalCommission);
+
+  // Calculate splits for the selected period
+  const deduction = Math.round(subtotalCommission * 0.207);
+  const netCommission = subtotalCommission - deduction;
+  const diosgShare = Math.round(netCommission * 0.60);
+  const aldiShare = Math.round(netCommission * 0.20);
+  const jokoShare = Math.round(netCommission * 0.20);
+
+  document.getElementById('table-summary-deduction').textContent = `-Rp ${formatNumberRupiah(deduction)}`;
+  document.getElementById('table-summary-net').textContent = formatFullRupiah(netCommission);
+  document.getElementById('table-summary-diosg').textContent = formatFullRupiah(diosgShare);
+  document.getElementById('table-summary-aldi').textContent = formatFullRupiah(aldiShare);
+  document.getElementById('table-summary-joko').textContent = formatFullRupiah(jokoShare);
 }
 
 // Simple HTML escaping helper

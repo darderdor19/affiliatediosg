@@ -41,49 +41,107 @@
     <section class="metrics-grid">
       <!-- Metric 1: Current Period Commission -->
       <div class="metric-card highlight">
-        <div class="metric-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="12" y1="4" x2="12" y2="20"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+        <div class="metric-main-row">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="12" y1="4" x2="12" y2="20"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">Komisi Periode Ini (Kotor)</p>
+            <h2 class="metric-value text-emerald" id="stat-current-commission">Rp 0</h2>
+            <p class="metric-subtext" id="stat-period-date-range">26 --- s/d 25 ---</p>
+          </div>
         </div>
-        <div class="metric-info">
-          <p class="metric-label">Komisi Periode Ini</p>
-          <h2 class="metric-value text-emerald" id="stat-current-commission">Rp 0</h2>
-          <p class="metric-subtext" id="stat-period-date-range">26 --- s/d 25 ---</p>
+        <div class="card-divider"></div>
+        <div class="metric-breakdown-details">
+          <div class="breakdown-row">
+            <span class="label">Potongan Admin (20,7%):</span>
+            <span class="val text-danger" id="stat-current-deduction">-Rp 0</span>
+          </div>
+          <div class="breakdown-row highlight-net">
+            <span class="label">Komisi Bersih (Final):</span>
+            <span class="val text-emerald" id="stat-current-net">Rp 0</span>
+          </div>
+          <div class="shares-row">
+            <div class="share-box">
+              <span class="share-name">DIOSG (60%)</span>
+              <span class="share-val" id="stat-current-diosg">Rp 0</span>
+            </div>
+            <div class="share-box">
+              <span class="share-name">ALDI (20%)</span>
+              <span class="share-val" id="stat-current-aldi">Rp 0</span>
+            </div>
+            <div class="share-box">
+              <span class="share-name">Joko (20%)</span>
+              <span class="share-val" id="stat-current-joko">Rp 0</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Metric 2: Total Sales -->
       <div class="metric-card">
-        <div class="metric-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-        </div>
-        <div class="metric-info">
-          <p class="metric-label">Jumlah Penjualan</p>
-          <h2 class="metric-value" id="stat-sales-count">0</h2>
-          <p class="metric-subtext" id="stat-sales-count-subtext">Transaksi sukses periode ini</p>
+        <div class="metric-main-row">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">Jumlah Penjualan</p>
+            <h2 class="metric-value" id="stat-sales-count">0</h2>
+            <p class="metric-subtext" id="stat-sales-count-subtext">Transaksi sukses periode ini</p>
+          </div>
         </div>
       </div>
 
       <!-- Metric 3: Countdown to Reset (Tanggal 25) -->
       <div class="metric-card">
-        <div class="metric-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        </div>
-        <div class="metric-info">
-          <p class="metric-label">Siklus Pembayaran</p>
-          <h2 class="metric-value text-amber" id="stat-countdown">-- Hari lagi</h2>
-          <p class="metric-subtext">Hingga cut-off tanggal 25</p>
+        <div class="metric-main-row">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">Siklus Pembayaran</p>
+            <h2 class="metric-value text-amber" id="stat-countdown">-- Hari lagi</h2>
+            <p class="metric-subtext">Hingga cut-off tanggal 25</p>
+          </div>
         </div>
       </div>
 
       <!-- Metric 4: All-Time Commissions -->
       <div class="metric-card">
-        <div class="metric-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+        <div class="metric-main-row">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">Total Komisi All-Time (Kotor)</p>
+            <h2 class="metric-value text-indigo" id="stat-all-time-commission">Rp 0</h2>
+            <p class="metric-subtext" id="stat-all-time-count">Dari 0 total penjualan</p>
+          </div>
         </div>
-        <div class="metric-info">
-          <p class="metric-label">Total Komisi (All-Time)</p>
-          <h2 class="metric-value text-indigo" id="stat-all-time-commission">Rp 0</h2>
-          <p class="metric-subtext" id="stat-all-time-count">Dari 0 total penjualan</p>
+        <div class="card-divider"></div>
+        <div class="metric-breakdown-details">
+          <div class="breakdown-row">
+            <span class="label">Potongan Admin (20,7%):</span>
+            <span class="val text-danger" id="stat-alltime-deduction">-Rp 0</span>
+          </div>
+          <div class="breakdown-row highlight-net">
+            <span class="label">Komisi Bersih (Final):</span>
+            <span class="val text-indigo" id="stat-alltime-net">Rp 0</span>
+          </div>
+          <div class="shares-row">
+            <div class="share-box">
+              <span class="share-name">DIOSG (60%)</span>
+              <span class="share-val" id="stat-alltime-diosg">Rp 0</span>
+            </div>
+            <div class="share-box">
+              <span class="share-name">ALDI (20%)</span>
+              <span class="share-val" id="stat-alltime-aldi">Rp 0</span>
+            </div>
+            <div class="share-box">
+              <span class="share-name">Joko (20%)</span>
+              <span class="share-val" id="stat-alltime-joko">Rp 0</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -358,13 +416,39 @@
 
         <!-- Table Footer Summary -->
         <div class="table-footer-summary">
-          <div class="footer-summary-item">
-            <span>Subtotal Harga:</span>
-            <strong id="table-summary-total-price">Rp 0</strong>
+          <div class="summary-main-row">
+            <div class="footer-summary-item">
+              <span>Subtotal Harga Deal:</span>
+              <strong id="table-summary-total-price">Rp 0</strong>
+            </div>
+            <div class="footer-summary-item highlight">
+              <span>Total Komisi Kotor:</span>
+              <strong id="table-summary-total-commission" class="text-emerald">Rp 0</strong>
+            </div>
           </div>
-          <div class="footer-summary-item highlight">
-            <span>Total Komisi Periode Terpilih:</span>
-            <strong id="table-summary-total-commission" class="text-emerald">Rp 0</strong>
+          <div class="summary-breakdown-panel">
+            <div class="summary-breakdown-row">
+              <span class="breakdown-label">Potongan Admin (20,7%):</span>
+              <span class="breakdown-value text-danger" id="table-summary-deduction">-Rp 0</span>
+            </div>
+            <div class="summary-breakdown-row highlight-net">
+              <span class="breakdown-label">Total Komisi Bersih (Final):</span>
+              <span class="breakdown-value text-emerald" id="table-summary-net">Rp 0</span>
+            </div>
+            <div class="summary-shares-grid">
+              <div class="summary-share-card diosg">
+                <span class="share-title">DIOSG (60%)</span>
+                <strong class="share-amount text-emerald" id="table-summary-diosg">Rp 0</strong>
+              </div>
+              <div class="summary-share-card aldi">
+                <span class="share-title">ALDI (20%)</span>
+                <strong class="share-amount text-emerald" id="table-summary-aldi">Rp 0</strong>
+              </div>
+              <div class="summary-share-card joko">
+                <span class="share-title">Joko (20%)</span>
+                <strong class="share-amount text-emerald" id="table-summary-joko">Rp 0</strong>
+              </div>
+            </div>
           </div>
         </div>
       </div>

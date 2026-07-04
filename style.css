@@ -1194,9 +1194,245 @@ select option {
   }
   
   .table-footer-summary {
+    padding: 16px;
+  }
+}
+
+/* ==========================================================================
+   COMMISSION SPLIT LAYOUT ADDITIONS (POTONGAN 20,7% & BAGI HASIL 60-20-20)
+   ========================================================================== */
+
+/* Metric Card Layout Updates */
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.metric-main-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.card-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  width: 100%;
+}
+
+/* Metric Breakdown details */
+.metric-breakdown-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.breakdown-row .label {
+  font-weight: 500;
+}
+
+.breakdown-row .val {
+  font-family: 'Plus Jakarta Sans', monospace;
+  font-weight: 600;
+}
+
+.breakdown-row.highlight-net {
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+}
+
+.breakdown-row.highlight-net .label {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.breakdown-row.highlight-net .val {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Shares (Bagi Hasil) Grid inside Metric Card */
+.shares-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.share-box {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.share-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.share-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', monospace;
+}
+
+/* Table Footer Summary Redesign */
+.table-footer-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  background-color: rgba(17, 24, 39, 0.4);
+  padding: 20px 24px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.summary-main-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 32px;
+}
+
+.summary-breakdown-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 16px;
+}
+
+.summary-breakdown-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.summary-breakdown-row .breakdown-label {
+  font-weight: 500;
+}
+
+.summary-breakdown-row .breakdown-value {
+  font-family: 'Plus Jakarta Sans', monospace;
+  font-weight: 600;
+  min-width: 140px;
+  text-align: right;
+}
+
+.summary-breakdown-row.highlight-net {
+  background-color: rgba(99, 102, 241, 0.05);
+  border-right: 4px solid var(--color-emerald);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+}
+
+.summary-breakdown-row.highlight-net .breakdown-label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.summary-breakdown-row.highlight-net .breakdown-value {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Shares Grid in Table Footer */
+.summary-shares-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.summary-share-card {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.summary-share-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.summary-share-card.diosg::before {
+  background-color: var(--color-primary);
+}
+
+.summary-share-card.aldi::before {
+  background-color: var(--color-amber);
+}
+
+.summary-share-card.joko::before {
+  background-color: var(--color-emerald);
+}
+
+.share-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.share-amount {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .summary-main-row {
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-    padding: 16px;
+  }
+  
+  .summary-shares-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .summary-breakdown-row {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .summary-breakdown-row .breakdown-value {
+    min-width: unset;
   }
 }
