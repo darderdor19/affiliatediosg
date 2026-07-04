@@ -1436,3 +1436,54 @@ select option {
     min-width: unset;
   }
 }
+
+/* Header Sheets Button Styles */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheets-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6ee7b7;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.sheets-btn:hover {
+  background-color: var(--color-emerald);
+  color: #fff;
+  border-color: var(--color-emerald);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.sheets-btn svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+@media (max-width: 768px) {
+  .header-right {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .sheets-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
