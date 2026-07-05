@@ -299,6 +299,13 @@ function initEventListeners() {
 
   // Reset current period data button
   resetDataBtn.addEventListener('click', triggerResetPeriodData);
+
+  // Product select change handler to lock coupon if needed
+  const productSelect = document.getElementById('sale-product');
+  productSelect.addEventListener('change', () => {
+    handleProductSelection();
+    updatePreview();
+  });
 }
 
 // --- UTILITY FUNCTIONS ---
@@ -322,6 +329,14 @@ function formatFullRupiah(num) {
 
 // Get the commission rate percentage based on coupon
 function getSelectedCommissionRate() {
+  const productSelect = document.getElementById('sale-product');
+  if (productSelect) {
+    const product = productSelect.value;
+    if (product === 'FAST TRACK AKADEMI CREATOR' || product === 'FAST TRACK AKADEMI MARKETER') {
+      return 10;
+    }
+  }
+
   const couponRadios = document.getElementsByName('sale-coupon');
   let selectedValue = '0';
   
@@ -354,6 +369,35 @@ function getSelectedCommissionRate() {
   };
 
   return ruleMap[selectedValue] || 10;
+}
+
+// Handle product selection to disable/enable coupon radios
+function handleProductSelection() {
+  const product = document.getElementById('sale-product').value;
+  const couponRadios = document.getElementsByName('sale-coupon');
+  const customRateGroup = document.getElementById('custom-commission-group');
+  
+  const isFastTrack = product === 'FAST TRACK AKADEMI CREATOR' || product === 'FAST TRACK AKADEMI MARKETER';
+  
+  if (isFastTrack) {
+    // Force coupon to '0' (Tanpa Kupon)
+    couponRadios.forEach(radio => {
+      if (radio.value === '0') {
+        radio.checked = true;
+      }
+      // Disable other choices
+      radio.disabled = radio.value !== '0';
+    });
+    // Hide and clear custom group
+    customRateGroup.classList.add('hidden');
+    document.getElementById('custom-commission-rate').value = '';
+    document.getElementById('custom-discount-rate').value = '';
+  } else {
+    // Enable all coupon choices
+    couponRadios.forEach(radio => {
+      radio.disabled = false;
+    });
+  }
 }
 
 // Get Coupon Display Text
@@ -900,6 +944,10 @@ window.editSale = function(id) {
   document.getElementById('edit-id').value = sale.id;
   document.getElementById('sale-date').value = sale.date;
   document.getElementById('sale-product').value = sale.product;
+  
+  // Call product selection handler to disable/enable coupon radios
+  handleProductSelection();
+
   // Populate with normalPrice (harga asli), dealPrice will auto-recalculate
   document.getElementById('sale-price').value = formatNumberRupiah(sale.normalPrice || sale.price);
   document.getElementById('sale-description').value = sale.description;
@@ -939,6 +987,10 @@ function cancelFormEdit() {
   const submitBtnText = document.getElementById('btn-submit').querySelector('span');
 
   form.reset();
+  
+  // Restore coupon radio options to default active states
+  handleProductSelection();
+
   editIdEl.value = '';
   customRateGroup.classList.add('hidden');
   resetFormBtn.classList.add('hidden');
