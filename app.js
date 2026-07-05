@@ -153,10 +153,7 @@ async function loadSalesData() {
           commissionRate: Number(data.commissionRate),
           commissionAmount: Number(data.commissionAmount),
           description: data.description || '',
-          period: data.period || getPeriodLabel(data.date),
-          diosgPaid: data.diosgPaid || false,
-          aldiPaid: data.aldiPaid || false,
-          jokoPaid: data.jokoPaid || false
+          period: data.period || getPeriodLabel(data.date)
         });
       });
     }
@@ -973,10 +970,7 @@ async function handleFormSubmit(e) {
       commissionRate: rate,
       commissionAmount: commission,
       description: descInput,
-      period: period,
-      diosgPaid: false,
-      aldiPaid: false,
-      jokoPaid: false
+      period: period
     };
     
     salesData.push(newSale);
@@ -1357,18 +1351,6 @@ window.switchDataTab = function(tab) {
   }
 };
 
-window.togglePayoutStatus = async function(id, person, isChecked) {
-  const sale = salesData.find(item => item.id === id);
-  if (!sale) return;
-
-  if (person === 'diosg') sale.diosgPaid = isChecked;
-  else if (person === 'aldi') sale.aldiPaid = isChecked;
-  else if (person === 'joko') sale.jokoPaid = isChecked;
-
-  renderPayoutsTable();
-  await saveSaleRecord(sale);
-};
-
 function renderPayoutsTable() {
   const tbody = document.getElementById('payout-tbody');
   if (!tbody) return;
@@ -1459,10 +1441,6 @@ function renderPayoutsTable() {
 
     const row = document.createElement('tr');
     
-    const diosgClass = sale.diosgPaid ? 'payout-toggle paid' : 'payout-toggle';
-    const aldiClass = sale.aldiPaid ? 'payout-toggle paid' : 'payout-toggle';
-    const jokoClass = sale.jokoPaid ? 'payout-toggle paid' : 'payout-toggle';
-
     row.innerHTML = `
       <td class="table-date">${formatDisplayDate(sale.date)}</td>
       <td>
@@ -1470,24 +1448,9 @@ function renderPayoutsTable() {
         <div style="font-weight:600; font-size:13px; margin-top:2px;">${escapeHTML(sale.description || 'Tanpa catatan')}</div>
       </td>
       <td style="text-align: right;" class="table-price">${formatNumberRupiah(net)}</td>
-      <td style="text-align: center;">
-        <label class="${diosgClass}">
-          <input type="checkbox" ${sale.diosgPaid ? 'checked' : ''} onchange="togglePayoutStatus('${sale.id}', 'diosg', this.checked)">
-          <span>${formatNumberRupiah(diosgShare)}</span>
-        </label>
-      </td>
-      <td style="text-align: center;">
-        <label class="${aldiClass}">
-          <input type="checkbox" ${sale.aldiPaid ? 'checked' : ''} onchange="togglePayoutStatus('${sale.id}', 'aldi', this.checked)">
-          <span>${formatNumberRupiah(aldiShare)}</span>
-        </label>
-      </td>
-      <td style="text-align: center;">
-        <label class="${jokoClass}">
-          <input type="checkbox" ${sale.jokoPaid ? 'checked' : ''} onchange="togglePayoutStatus('${sale.id}', 'joko', this.checked)">
-          <span>${formatNumberRupiah(jokoShare)}</span>
-        </label>
-      </td>
+      <td style="text-align: right; font-weight: 600;" class="table-price">${formatNumberRupiah(diosgShare)}</td>
+      <td style="text-align: right; font-weight: 600;" class="table-price">${formatNumberRupiah(aldiShare)}</td>
+      <td style="text-align: right; font-weight: 600;" class="table-price">${formatNumberRupiah(jokoShare)}</td>
     `;
     tbody.appendChild(row);
   });
