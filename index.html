@@ -469,74 +469,90 @@
 
         <!-- VIEW 2: PAYOUT STATUS -->
         <div id="view-payouts-list" class="hidden">
-          <!-- Manual Payout Inputs Card -->
-          <div class="payout-inputs-card">
-            <h4 class="payout-card-title">📝 Kelola Pembayaran Payout (Sudah Dibagikan)</h4>
-            <p class="payout-card-subtitle">Input nominal yang sudah ditransfer ke masing-masing pihak untuk periode ini.</p>
-            <div class="payout-inputs-grid">
-              <div class="payout-input-group diosg">
-                <label>DIOSG (60%)</label>
-                <div class="payout-input-wrapper">
-                  <span class="prefix">Rp</span>
-                  <input type="text" id="payout-input-diosg" placeholder="0" autocomplete="off">
+          <div class="payout-workspace-grid">
+            <!-- Left Side: Form to Record Payout -->
+            <div class="payout-form-panel">
+              <h4 class="payout-card-title">💸 Catat Transaksi Payout</h4>
+              <p class="payout-card-subtitle">Input detail transfer bagi hasil secara manual di bawah ini.</p>
+              
+              <form id="payout-record-form">
+                <div class="form-group">
+                  <label for="payout-date">Tanggal Transfer</label>
+                  <input type="date" id="payout-date" required>
                 </div>
-                <div class="payout-calc-info">
-                  <span>Porsi: <strong id="payout-total-diosg">Rp 0</strong></span>
-                  <span>Sisa: <strong id="payout-remaining-diosg" class="sisa-val">Rp 0</strong></span>
+                <div class="form-group">
+                  <label for="payout-recipient">Nama Penerima</label>
+                  <div class="select-wrapper">
+                    <select id="payout-recipient" required>
+                      <option value="" disabled selected>Pilih Penerima...</option>
+                      <option value="DIOSG">DIOSG (60%)</option>
+                      <option value="ALDI">ALDI (20%)</option>
+                      <option value="Joko">Joko (20%)</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div class="payout-input-group aldi">
-                <label>ALDI (20%)</label>
-                <div class="payout-input-wrapper">
-                  <span class="prefix">Rp</span>
-                  <input type="text" id="payout-input-aldi" placeholder="0" autocomplete="off">
+                <div class="form-group">
+                  <label for="payout-amount">Nominal Transfer (IDR)</label>
+                  <div class="input-icon-wrapper">
+                    <span class="input-prefix">Rp</span>
+                    <input type="text" id="payout-amount" placeholder="0" required autocomplete="off">
+                  </div>
                 </div>
-                <div class="payout-calc-info">
-                  <span>Porsi: <strong id="payout-total-aldi">Rp 0</strong></span>
-                  <span>Sisa: <strong id="payout-remaining-aldi" class="sisa-val">Rp 0</strong></span>
+                <div class="form-group">
+                  <label for="payout-desc">Catatan / Keterangan</label>
+                  <textarea id="payout-desc" rows="3" placeholder="Contoh: Transfer via Mandiri, Bayar sisa komisi..." autocomplete="off"></textarea>
                 </div>
-              </div>
-              <div class="payout-input-group joko">
-                <label>Joko (20%)</label>
-                <div class="payout-input-wrapper">
-                  <span class="prefix">Rp</span>
-                  <input type="text" id="payout-input-joko" placeholder="0" autocomplete="off">
-                </div>
-                <div class="payout-calc-info">
-                  <span>Porsi: <strong id="payout-total-joko">Rp 0</strong></span>
-                  <span>Sisa: <strong id="payout-remaining-joko" class="sisa-val">Rp 0</strong></span>
-                </div>
-              </div>
+                
+                <button type="submit" class="btn btn-emerald" id="btn-save-payout" style="width: 100%; margin-top: 10px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-right: 6px;"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Catat Payout</span>
+                </button>
+              </form>
             </div>
-          </div>
 
-          <!-- Payout Table Container -->
-          <div class="table-container payout-table-container">
-            <table class="data-table" id="payout-table">
-              <thead>
-                <tr>
-                  <th style="width: 12%;">Tanggal</th>
-                  <th style="width: 28%;">Deskripsi / Catatan</th>
-                  <th style="width: 15%; text-align: right;">Komisi Bersih</th>
-                  <th style="width: 15%; text-align: right;">DIOSG (60%)</th>
-                  <th style="width: 15%; text-align: right;">ALDI (20%)</th>
-                  <th style="width: 15%; text-align: right;">Joko (20%)</th>
-                </tr>
-              </thead>
-              <tbody id="payout-tbody">
-                <!-- Javascript will populate rows dynamically -->
-              </tbody>
-            </table>
-          </div>
-          
-          <!-- Payout Footer Summary -->
-          <div class="payout-footer-summary">
-            <div class="payout-summary-card">
-              <span class="payout-summary-title">Ringkasan Sisa Saldo Payout Periode Terpilih</span>
-              <div class="payout-summary-values">
-                <div><span>DIOSG Sisa:</span><strong id="payout-footer-rem-diosg">Rp 0</strong></div>
-                <div><span>ALDI Sisa:</span><strong id="payout-footer-rem-aldi">Rp 0</strong></div>
-                <div><span>Joko Sisa:</span><strong id="payout-footer-rem-joko">Rp 0</strong></div>
+            <!-- Right Side: Balances & History List -->
+            <div class="payout-data-panel">
+              <!-- Summary Balances (Porsi vs Sisa) -->
+              <div class="payout-balances-grid">
+                <div class="payout-balance-card diosg">
+                  <span class="card-name">DIOSG (60%)</span>
+                  <div class="card-row"><span>Porsi:</span><strong id="payout-total-diosg">Rp 0</strong></div>
+                  <div class="card-row"><span>Sudah:</span><strong id="payout-paid-diosg" class="text-emerald">Rp 0</strong></div>
+                  <div class="card-row divider"><span>Sisa:</span><strong id="payout-remaining-diosg" class="sisa-val">Rp 0</strong></div>
+                </div>
+                <div class="payout-balance-card aldi">
+                  <span class="card-name">ALDI (20%)</span>
+                  <div class="card-row"><span>Porsi:</span><strong id="payout-total-aldi">Rp 0</strong></div>
+                  <div class="card-row"><span>Sudah:</span><strong id="payout-paid-aldi" class="text-emerald">Rp 0</strong></div>
+                  <div class="card-row divider"><span>Sisa:</span><strong id="payout-remaining-aldi" class="sisa-val">Rp 0</strong></div>
+                </div>
+                <div class="payout-balance-card joko">
+                  <span class="card-name">Joko (20%)</span>
+                  <div class="card-row"><span>Porsi:</span><strong id="payout-total-joko">Rp 0</strong></div>
+                  <div class="card-row"><span>Sudah:</span><strong id="payout-paid-joko" class="text-emerald">Rp 0</strong></div>
+                  <div class="card-row divider"><span>Sisa:</span><strong id="payout-remaining-joko" class="sisa-val">Rp 0</strong></div>
+                </div>
+              </div>
+
+              <!-- Payout Table Ledger -->
+              <div class="ledger-header-row">
+                <h5>📜 Riwayat Pembayaran Payout</h5>
+              </div>
+              <div class="table-container payout-table-container">
+                <table class="data-table" id="payout-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 15%;">Tanggal</th>
+                      <th style="width: 20%;">Penerima</th>
+                      <th style="width: 20%; text-align: right;">Nominal</th>
+                      <th style="width: 35%;">Keterangan</th>
+                      <th style="width: 10%; text-align: center;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payout-tbody">
+                    <!-- Javascript will populate rows dynamically -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

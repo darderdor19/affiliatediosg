@@ -1529,53 +1529,70 @@ select option {
   box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
 }
 
-/* Manual Payout Inputs Card */
-.payout-inputs-card {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(17, 24, 39, 0.6) 100%);
+/* Payout Split Grid Layout */
+.payout-workspace-grid {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .payout-workspace-grid {
+    flex-direction: column;
+  }
+}
+
+.payout-form-panel {
+  flex: 0 0 320px;
+  background: rgba(17, 24, 39, 0.4);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  width: 320px;
 }
 
-.payout-card-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-main);
-  margin-bottom: 4px;
+@media (max-width: 1100px) {
+  .payout-form-panel {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 
-.payout-card-subtitle {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
+.payout-data-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  overflow: hidden;
 }
 
-.payout-inputs-grid {
+/* Payout Balances Grid */
+.payout-balances-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
-  .payout-inputs-grid {
+  .payout-balances-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 }
 
-.payout-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background-color: rgba(0, 0, 0, 0.15);
+.payout-balance-card {
+  background: rgba(15, 23, 42, 0.6);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 16px;
   position: relative;
 }
 
-.payout-input-group::before {
+.payout-balance-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1585,160 +1602,72 @@ select option {
   border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
-.payout-input-group.diosg::before { background-color: var(--color-primary); }
-.payout-input-group.aldi::before { background-color: var(--color-amber); }
-.payout-input-group.joko::before { background-color: var(--color-emerald); }
+.payout-balance-card.diosg::before { background-color: var(--color-primary); }
+.payout-balance-card.aldi::before { background-color: var(--color-amber); }
+.payout-balance-card.joko::before { background-color: var(--color-emerald); }
 
-.payout-input-group label {
+.payout-balance-card .card-name {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-}
-
-.payout-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.payout-input-wrapper .prefix {
-  position: absolute;
-  left: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted-dark);
-}
-
-.payout-input-wrapper input {
-  width: 100%;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-main);
-  padding: 6px 8px 6px 28px;
-  font-size: 13px;
-  font-family: 'Plus Jakarta Sans', monospace;
-  font-weight: 700;
-  text-align: right;
-  outline: none;
-}
-
-.payout-input-wrapper input:focus {
-  border-color: rgba(99, 102, 241, 0.4);
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.payout-calc-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  margin-top: 6px;
-  color: var(--text-muted);
-}
-
-.payout-calc-info strong {
-  font-family: 'Plus Jakarta Sans', monospace;
-  color: var(--text-main);
-}
-
-.payout-calc-info .sisa-val {
-  color: var(--color-amber);
-}
-
-.payout-calc-info .sisa-val.lunas {
-  color: var(--color-emerald);
-}
-
-/* Checkbox Toggle inside Payout Table */
-.payout-toggle {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  user-select: none;
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
-  padding: 4px 10px;
-  border-radius: 50px;
-  font-size: 11px;
-  font-weight: 600;
-  transition: all var(--transition-fast);
-  color: var(--text-muted);
-}
-
-.payout-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: var(--border-hover);
-}
-
-.payout-toggle input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--color-emerald);
-  cursor: pointer;
-  margin: 0;
-}
-
-.payout-toggle.paid {
-  background-color: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
-}
-
-.payout-toggle.paid:hover {
-  background-color: rgba(16, 185, 129, 0.15);
-}
-
-/* Payout Footer Summary */
-.payout-footer-summary {
-  margin-top: 16px;
-}
-
-.payout-summary-card {
-  background-color: rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.payout-summary-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 12px;
   display: block;
 }
 
-.payout-summary-values {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 768px) {
-  .payout-summary-values {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
-.payout-summary-values div {
+.payout-balance-card .card-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
+  margin-top: 4px;
 }
 
-.payout-summary-values div strong {
-  font-size: 15px;
-  font-weight: 700;
+.payout-balance-card .card-row strong {
   font-family: 'Plus Jakarta Sans', monospace;
   color: var(--text-main);
+  font-size: 13px;
 }
+
+.payout-balance-card .card-row.divider {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.payout-balance-card .card-row.divider strong {
+  font-size: 15px;
+}
+
+.payout-balance-card .sisa-val {
+  color: var(--color-amber);
+}
+
+.payout-balance-card .sisa-val.lunas {
+  color: var(--color-emerald);
+}
+
+.ledger-header-row {
+  margin-top: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.ledger-header-row h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.payout-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
 
 

@@ -10,7 +10,7 @@ const MONTH_NAMES_ID = [
 
 let salesData = [];
 let currentEditingId = null;
-let periodPayoutsData = {};
+let payoutTransactionsData = [];
 let currentActiveViewTab = 'list';
 
 // --- MOBILE TAB SWITCHER ---
@@ -158,14 +158,28 @@ async function loadSalesData() {
       });
     }
 
-    // Load period payouts as well
-    const payoutSnapshot = await db.ref('period_payouts').once('value');
-    periodPayoutsData = payoutSnapshot.val() || {};
+    // Load payout ledger transactions as well
+    const payoutSnapshot = await db.ref('payout_transactions').once('value');
+    payoutTransactionsData = [];
+    const pVal = payoutSnapshot.val();
+    if (pVal) {
+      Object.keys(pVal).forEach(key => {
+        const data = pVal[key];
+        payoutTransactionsData.push({
+          id: key,
+          date: data.date,
+          recipient: data.recipient,
+          amount: Number(data.amount || 0),
+          description: data.description || '',
+          period: data.period || getPeriodLabel(data.date)
+        });
+      });
+    }
   } catch (e) {
     console.error("Realtime DB Fetch Error:", e);
     showToast("Gagal memuat data dari Cloud Firebase.", "error");
     salesData = [];
-    periodPayoutsData = {};
+    payoutTransactionsData = [];
   }
 }
 
@@ -318,49 +332,38 @@ function initEventListeners() {
     updatePreview();
   });
 
-  // Payout manual inputs
-  const inputDiosg = document.getElementById('payout-input-diosg');
-  const inputAldi = document.getElementById('payout-input-aldi');
-  const inputJoko = document.getElementById('payout-input-joko');
+  // Payout form date default value (today)
+  const payoutDateEl = document.getElementById('payout-date');
+  if (payoutDateEl) {
+    const today = new Date();
+    payoutDateEl.value = today.toISOString().split('T')[0];
+  }
 
-  const handlePayoutInput = (el, person) => {
-    if (!el) return;
-    el.addEventListener('input', (e) => {
-      let rawVal = getRawNumber(e.target.value);
-      e.target.value = rawVal > 0 ? formatNumberRupiah(rawVal) : '';
+  // Payout amount formatting input handler
+  const payoutAmountInput = document.getElementById('payout-amount');
+  if (payoutAmountInput) {
+    payoutAmountInput.addEventListener('input', (e) => {
+      let cursorPosition = e.target.selectionStart;
+      let originalLen = e.target.value.length;
       
-      const periodFilter = document.getElementById('period-filter').value;
-      const activePeriod = getActivePeriodLabel();
-      const targetPeriod = periodFilter === 'current' ? activePeriod : periodFilter;
-
-      if (targetPeriod === 'all') return;
-
-      if (!periodPayoutsData[targetPeriod]) {
-        periodPayoutsData[targetPeriod] = { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
+      let numericVal = getRawNumber(e.target.value);
+      if (isNaN(numericVal) || numericVal <= 0) {
+        e.target.value = '';
+        return;
       }
+      e.target.value = formatNumberRupiah(numericVal);
       
-      if (person === 'diosg') periodPayoutsData[targetPeriod].diosgPaid = rawVal;
-      else if (person === 'aldi') periodPayoutsData[targetPeriod].aldiPaid = rawVal;
-      else if (person === 'joko') periodPayoutsData[targetPeriod].jokoPaid = rawVal;
-
-      renderPayoutsTable();
+      let newLen = e.target.value.length;
+      cursorPosition = cursorPosition + (newLen - originalLen);
+      e.target.setSelectionRange(cursorPosition, cursorPosition);
     });
+  }
 
-    el.addEventListener('change', async (e) => {
-      const periodFilter = document.getElementById('period-filter').value;
-      const activePeriod = getActivePeriodLabel();
-      const targetPeriod = periodFilter === 'current' ? activePeriod : periodFilter;
-      
-      if (targetPeriod === 'all') return;
-      
-      const info = periodPayoutsData[targetPeriod] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
-      await savePayoutRecord(targetPeriod, Number(info.diosgPaid), Number(info.aldiPaid), Number(info.jokoPaid));
-    });
-  };
-
-  handlePayoutInput(inputDiosg, 'diosg');
-  handlePayoutInput(inputAldi, 'aldi');
-  handlePayoutInput(inputJoko, 'joko');
+  // Payout form submit handler
+  const payoutForm = document.getElementById('payout-record-form');
+  if (payoutForm) {
+    payoutForm.addEventListener('submit', handlePayoutFormSubmit);
+  }
 }
 
 // --- UTILITY FUNCTIONS ---
@@ -1308,23 +1311,91 @@ function handleJSONImport(e) {
 
 // --- PAYOUT MODULE HELPER FUNCTIONS ---
 
-async function savePayoutRecord(period, diosgVal, aldiVal, jokoVal) {
-  if (!db) return;
-  try {
-    if (!periodPayoutsData[period]) {
-      periodPayoutsData[period] = {};
-    }
-    periodPayoutsData[period].diosgPaid = diosgVal;
-    periodPayoutsData[period].aldiPaid = aldiVal;
-    periodPayoutsData[period].jokoPaid = jokoVal;
+// --- PAYOUT MODULE HELPER FUNCTIONS ---
 
-    await db.ref(`period_payouts/${period}`).set(periodPayoutsData[period]);
-    triggerSheetsSync(); // trigger sheets sync immediately
-  } catch (e) {
-    console.error("Failed to save payout record:", e);
-    showToast("Gagal menyimpan data pembayaran.", "error");
+async function handlePayoutFormSubmit(e) {
+  e.preventDefault();
+
+  const dateInput = document.getElementById('payout-date').value;
+  const recipientInput = document.getElementById('payout-recipient').value;
+  const amountInput = document.getElementById('payout-amount').value;
+  const descInput = document.getElementById('payout-desc').value;
+
+  const amount = getRawNumber(amountInput);
+  if (amount <= 0) {
+    showToast("Nominal transfer payout harus lebih dari Rp 0", "error");
+    return;
+  }
+
+  if (!recipientInput) {
+    showToast("Silakan pilih penerima payout", "error");
+    return;
+  }
+
+  const period = getPeriodLabel(dateInput);
+
+  // Show confirmation dialog before saving
+  const confirmed = await showConfirmDialog(
+    "Konfirmasi Pencatatan Payout",
+    `Apakah Anda yakin ingin mencatat transfer pembayaran payout bagi hasil sebesar ${formatFullRupiah(amount)} kepada "${recipientInput}"?`,
+    false
+  );
+
+  if (!confirmed) return;
+
+  const newPayout = {
+    id: 'payout_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+    date: dateInput,
+    recipient: recipientInput,
+    amount: amount,
+    description: descInput,
+    period: period
+  };
+
+  try {
+    payoutTransactionsData.push(newPayout);
+    if (db) {
+      await db.ref(`payout_transactions/${newPayout.id}`).set(newPayout);
+      triggerSheetsSync(); // trigger Sheets sync
+    }
+    showToast(`Berhasil mencatat payout untuk ${recipientInput}!`);
+    
+    // Reset form fields (keep date as today)
+    document.getElementById('payout-amount').value = '';
+    document.getElementById('payout-desc').value = '';
+    document.getElementById('payout-recipient').value = '';
+
+    renderPayoutsTable();
+  } catch (err) {
+    console.error("Failed to save payout:", err);
+    showToast("Gagal menyimpan transaksi payout.", "error");
   }
 }
+
+window.deletePayoutRecord = async function(id) {
+  const payout = payoutTransactionsData.find(item => item.id === id);
+  if (!payout) return;
+
+  const confirmed = await showConfirmDialog(
+    "Hapus Transaksi Payout",
+    `Apakah Anda yakin ingin menghapus catatan payout kepada "${payout.recipient}" sebesar ${formatFullRupiah(payout.amount)}? Tindakan ini tidak dapat dibatalkan.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    payoutTransactionsData = payoutTransactionsData.filter(item => item.id !== id);
+    if (db) {
+      await db.ref(`payout_transactions/${id}`).remove();
+      triggerSheetsSync(); // sync sheets
+    }
+    showToast("Catatan transaksi payout berhasil dihapus.");
+    renderPayoutsTable();
+  } catch (err) {
+    console.error("Failed to delete payout:", err);
+    showToast("Gagal menghapus catatan payout.", "error");
+  }
+};
 
 window.switchDataTab = function(tab) {
   currentActiveViewTab = tab;
@@ -1363,80 +1434,74 @@ function renderPayoutsTable() {
     targetPeriod = activePeriod;
   }
 
+  // 1. Filter sales transactions by period to calculate the total PORTIONS (Porsi)
   let filteredSales = salesData;
   if (targetPeriod !== 'all') {
     filteredSales = filteredSales.filter(sale => sale.period === targetPeriod);
   }
 
-  filteredSales.sort((a, b) => {
+  let totalDiosgPorsi = 0;
+  let totalAldiPorsi = 0;
+  let totalJokoPorsi = 0;
+
+  filteredSales.forEach(sale => {
+    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
+    totalDiosgPorsi += Math.round(net * 0.60);
+    totalAldiPorsi += Math.round(net * 0.20);
+    totalJokoPorsi += Math.round(net * 0.20);
+  });
+
+  // Display Portions
+  document.getElementById('payout-total-diosg').textContent = formatFullRupiah(totalDiosgPorsi);
+  document.getElementById('payout-total-aldi').textContent = formatFullRupiah(totalAldiPorsi);
+  document.getElementById('payout-total-joko').textContent = formatFullRupiah(totalJokoPorsi);
+
+  // 2. Filter payout transactions by period to calculate the total PAID (Sudah)
+  let filteredPayouts = payoutTransactionsData;
+  if (targetPeriod !== 'all') {
+    filteredPayouts = filteredPayouts.filter(p => p.period === targetPeriod);
+  }
+
+  let totalDiosgPaid = 0;
+  let totalAldiPaid = 0;
+  let totalJokoPaid = 0;
+
+  filteredPayouts.forEach(p => {
+    if (p.recipient === 'DIOSG') totalDiosgPaid += p.amount;
+    else if (p.recipient === 'ALDI') totalAldiPaid += p.amount;
+    else if (p.recipient === 'Joko') totalJokoPaid += p.amount;
+  });
+
+  // Display Paid
+  document.getElementById('payout-paid-diosg').textContent = formatFullRupiah(totalDiosgPaid);
+  document.getElementById('payout-paid-aldi').textContent = formatFullRupiah(totalAldiPaid);
+  document.getElementById('payout-paid-joko').textContent = formatFullRupiah(totalJokoPaid);
+
+  // 3. Calculate and display remaining (Sisa)
+  updatePayoutRemainingCalculations(
+    totalDiosgPorsi, totalDiosgPaid,
+    totalAldiPorsi, totalAldiPaid,
+    totalJokoPorsi, totalJokoPaid
+  );
+
+  // 4. Render the payout ledger table rows
+  tbody.innerHTML = '';
+
+  // Sort payout transactions by date descending
+  filteredPayouts.sort((a, b) => {
     if (a.date !== b.date) {
       return b.date.localeCompare(a.date);
     }
     return b.id.localeCompare(a.id);
   });
 
-  let totalNet = 0;
-  let totalDiosg = 0;
-  let totalAldi = 0;
-  let totalJoko = 0;
-
-  filteredSales.forEach(sale => {
-    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
-    totalNet += net;
-    totalDiosg += Math.round(net * 0.60);
-    totalAldi += Math.round(net * 0.20);
-    totalJoko += Math.round(net * 0.20);
-  });
-
-  document.getElementById('payout-total-diosg').textContent = formatFullRupiah(totalDiosg);
-  document.getElementById('payout-total-aldi').textContent = formatFullRupiah(totalAldi);
-  document.getElementById('payout-total-joko').textContent = formatFullRupiah(totalJoko);
-
-  const isPeriodAll = targetPeriod === 'all';
-  const inputDiosgEl = document.getElementById('payout-input-diosg');
-  const inputAldiEl = document.getElementById('payout-input-aldi');
-  const inputJokoEl = document.getElementById('payout-input-joko');
-
-  if (isPeriodAll) {
-    let paidDiosg = 0;
-    let paidAldi = 0;
-    let paidJoko = 0;
-
-    Object.keys(periodPayoutsData).forEach(pKey => {
-      paidDiosg += Number(periodPayoutsData[pKey].diosgPaid || 0);
-      paidAldi += Number(periodPayoutsData[pKey].aldiPaid || 0);
-      paidJoko += Number(periodPayoutsData[pKey].jokoPaid || 0);
-    });
-
-    inputDiosgEl.value = paidDiosg ? formatNumberRupiah(paidDiosg) : '0';
-    inputAldiEl.value = paidAldi ? formatNumberRupiah(paidAldi) : '0';
-    inputJokoEl.value = paidJoko ? formatNumberRupiah(paidJoko) : '0';
-    
-    inputDiosgEl.disabled = true;
-    inputAldiEl.disabled = true;
-    inputJokoEl.disabled = true;
-  } else {
-    inputDiosgEl.disabled = false;
-    inputAldiEl.disabled = false;
-    inputJokoEl.disabled = false;
-
-    const payoutInfo = periodPayoutsData[targetPeriod] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
-    inputDiosgEl.value = payoutInfo.diosgPaid ? formatNumberRupiah(payoutInfo.diosgPaid) : '';
-    inputAldiEl.value = payoutInfo.aldiPaid ? formatNumberRupiah(payoutInfo.aldiPaid) : '';
-    inputJokoEl.value = payoutInfo.jokoPaid ? formatNumberRupiah(payoutInfo.jokoPaid) : '';
-  }
-
-  updatePayoutRemainingCalculations(totalDiosg, totalAldi, totalJoko, targetPeriod);
-
-  tbody.innerHTML = '';
-
-  if (filteredSales.length === 0) {
+  if (filteredPayouts.length === 0) {
     tbody.innerHTML = `
       <tr class="empty-state">
-        <td colspan="6">
+        <td colspan="5">
           <div class="empty-state-content">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <p>Belum ada data payout pada periode ini.</p>
+            <p>Belum ada riwayat pembayaran payout yang tercatat.</p>
           </div>
         </td>
       </tr>
@@ -1444,74 +1509,55 @@ function renderPayoutsTable() {
     return;
   }
 
-  filteredSales.forEach(sale => {
-    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
-    const diosgShare = Math.round(net * 0.60);
-    const aldiShare = Math.round(net * 0.20);
-    const jokoShare = Math.round(net * 0.20);
-
+  filteredPayouts.forEach(item => {
     const row = document.createElement('tr');
     
+    // Style recipient name badge
+    let recipientColor = 'var(--text-main)';
+    if (item.recipient === 'DIOSG') recipientColor = 'var(--color-primary)';
+    else if (item.recipient === 'ALDI') recipientColor = 'var(--color-amber)';
+    else if (item.recipient === 'Joko') recipientColor = 'var(--color-emerald)';
+
     row.innerHTML = `
-      <td class="table-date">${formatDisplayDate(sale.date)}</td>
-      <td>
-        <div class="table-product" style="font-size:11px; color:var(--text-muted);">${escapeHTML(sale.product)}</div>
-        <div style="font-weight:600; font-size:13px; margin-top:2px;">${escapeHTML(sale.description || 'Tanpa catatan')}</div>
+      <td class="table-date">${formatDisplayDate(item.date)}</td>
+      <td style="text-align: center;"><span style="color: ${recipientColor}; font-weight: 700; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 50px; border: 1px solid var(--border-color); font-size: 11px;">${escapeHTML(item.recipient)}</span></td>
+      <td style="text-align: right; font-weight: 700; color: #fff;" class="table-price">${formatNumberRupiah(item.amount)}</td>
+      <td style="font-weight: 500; font-size: 13px;">${escapeHTML(item.description || 'Tanpa catatan')}</td>
+      <td style="text-align: center;">
+        <button type="button" class="btn-action btn-delete" onclick="deletePayoutRecord('${item.id}')" title="Hapus catatan payout">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
       </td>
-      <td style="text-align: right;" class="table-price">${formatNumberRupiah(net)}</td>
-      <td style="text-align: right; font-weight: 600;" class="table-price">${formatNumberRupiah(diosgShare)}</td>
-      <td style="text-align: right; font-weight: 600;" class="table-price">${formatNumberRupiah(aldiShare)}</td>
-      <td style="text-align: right; font-weight: 600;" class="table-price">${formatNumberRupiah(jokoShare)}</td>
     `;
     tbody.appendChild(row);
   });
 }
 
-function updatePayoutRemainingCalculations(totalDiosg, totalAldi, totalJoko, period) {
+function updatePayoutRemainingCalculations(
+  totalDiosg, paidDiosg,
+  totalAldi, paidAldi,
+  totalJoko, paidJoko
+) {
   const remDiosgEl = document.getElementById('payout-remaining-diosg');
   const remAldiEl = document.getElementById('payout-remaining-aldi');
   const remJokoEl = document.getElementById('payout-remaining-joko');
 
-  const footerDiosgEl = document.getElementById('payout-footer-rem-diosg');
-  const footerAldiEl = document.getElementById('payout-footer-rem-aldi');
-  const footerJokoEl = document.getElementById('payout-footer-rem-joko');
-
-  if (!remDiosgEl || !remAldiEl || !remJokoEl || !footerDiosgEl || !footerAldiEl || !footerJokoEl) return;
-
-  let paidDiosg = 0;
-  let paidAldi = 0;
-  let paidJoko = 0;
-
-  if (period === 'all') {
-    Object.keys(periodPayoutsData).forEach(pKey => {
-      paidDiosg += Number(periodPayoutsData[pKey].diosgPaid || 0);
-      paidAldi += Number(periodPayoutsData[pKey].aldiPaid || 0);
-      paidJoko += Number(periodPayoutsData[pKey].jokoPaid || 0);
-    });
-  } else {
-    const payoutInfo = periodPayoutsData[period] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
-    paidDiosg = Number(payoutInfo.diosgPaid || 0);
-    paidAldi = Number(payoutInfo.aldiPaid || 0);
-    paidJoko = Number(payoutInfo.jokoPaid || 0);
-  }
+  if (!remDiosgEl || !remAldiEl || !remJokoEl) return;
 
   const remDiosg = totalDiosg - paidDiosg;
   const remAldi = totalAldi - paidAldi;
   const remJoko = totalJoko - paidJoko;
 
-  const displayRemaining = (val, el, footerEl) => {
+  const displayRemaining = (val, el) => {
     el.textContent = formatFullRupiah(val);
-    footerEl.textContent = formatFullRupiah(val);
     if (val <= 0) {
       el.className = "sisa-val lunas";
-      footerEl.className = "text-emerald";
     } else {
       el.className = "sisa-val";
-      footerEl.className = "text-amber";
     }
   };
 
-  displayRemaining(remDiosg, remDiosgEl, footerDiosgEl);
-  displayRemaining(remAldi, remAldiEl, footerAldiEl);
-  displayRemaining(remJoko, remJokoEl, footerJokoEl);
+  displayRemaining(remDiosg, remDiosgEl);
+  displayRemaining(remAldi, remAldiEl);
+  displayRemaining(remJoko, remJokoEl);
 }
