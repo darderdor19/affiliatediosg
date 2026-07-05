@@ -10,6 +10,8 @@ const MONTH_NAMES_ID = [
 
 let salesData = [];
 let currentEditingId = null;
+let periodPayoutsData = {};
+let currentActiveViewTab = 'list';
 
 // --- MOBILE TAB SWITCHER ---
 window.switchTab = function(tab) {
@@ -92,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboard();
         populatePeriodFilter();
         renderSalesTable();
+        renderPayoutsTable();
       }).catch(err => {
         console.error("Gagal memuat data dari Firebase:", err);
       });
@@ -150,14 +153,22 @@ async function loadSalesData() {
           commissionRate: Number(data.commissionRate),
           commissionAmount: Number(data.commissionAmount),
           description: data.description || '',
-          period: data.period || getPeriodLabel(data.date)
+          period: data.period || getPeriodLabel(data.date),
+          diosgPaid: data.diosgPaid || false,
+          aldiPaid: data.aldiPaid || false,
+          jokoPaid: data.jokoPaid || false
         });
       });
     }
+
+    // Load period payouts as well
+    const payoutSnapshot = await db.ref('period_payouts').once('value');
+    periodPayoutsData = payoutSnapshot.val() || {};
   } catch (e) {
     console.error("Realtime DB Fetch Error:", e);
     showToast("Gagal memuat data dari Cloud Firebase.", "error");
     salesData = [];
+    periodPayoutsData = {};
   }
 }
 
@@ -259,17 +270,20 @@ function initEventListeners() {
   // Search input handler (live search)
   searchInput.addEventListener('input', () => {
     renderSalesTable();
+    renderPayoutsTable();
   });
 
   // Period filter change handler
   periodFilter.addEventListener('change', () => {
     renderSalesTable();
+    renderPayoutsTable();
   });
 
   // Product filter change handler
   const productFilter = document.getElementById('product-filter');
   productFilter.addEventListener('change', () => {
     renderSalesTable();
+    renderPayoutsTable();
   });
 
   // Export to CSV
@@ -306,6 +320,50 @@ function initEventListeners() {
     handleProductSelection();
     updatePreview();
   });
+
+  // Payout manual inputs
+  const inputDiosg = document.getElementById('payout-input-diosg');
+  const inputAldi = document.getElementById('payout-input-aldi');
+  const inputJoko = document.getElementById('payout-input-joko');
+
+  const handlePayoutInput = (el, person) => {
+    if (!el) return;
+    el.addEventListener('input', (e) => {
+      let rawVal = getRawNumber(e.target.value);
+      e.target.value = rawVal > 0 ? formatNumberRupiah(rawVal) : '';
+      
+      const periodFilter = document.getElementById('period-filter').value;
+      const activePeriod = getActivePeriodLabel();
+      const targetPeriod = periodFilter === 'current' ? activePeriod : periodFilter;
+
+      if (targetPeriod === 'all') return;
+
+      if (!periodPayoutsData[targetPeriod]) {
+        periodPayoutsData[targetPeriod] = { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
+      }
+      
+      if (person === 'diosg') periodPayoutsData[targetPeriod].diosgPaid = rawVal;
+      else if (person === 'aldi') periodPayoutsData[targetPeriod].aldiPaid = rawVal;
+      else if (person === 'joko') periodPayoutsData[targetPeriod].jokoPaid = rawVal;
+
+      renderPayoutsTable();
+    });
+
+    el.addEventListener('change', async (e) => {
+      const periodFilter = document.getElementById('period-filter').value;
+      const activePeriod = getActivePeriodLabel();
+      const targetPeriod = periodFilter === 'current' ? activePeriod : periodFilter;
+      
+      if (targetPeriod === 'all') return;
+      
+      const info = periodPayoutsData[targetPeriod] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
+      await savePayoutRecord(targetPeriod, Number(info.diosgPaid), Number(info.aldiPaid), Number(info.jokoPaid));
+    });
+  };
+
+  handlePayoutInput(inputDiosg, 'diosg');
+  handlePayoutInput(inputAldi, 'aldi');
+  handlePayoutInput(inputJoko, 'joko');
 }
 
 // --- UTILITY FUNCTIONS ---
@@ -915,7 +973,10 @@ async function handleFormSubmit(e) {
       commissionRate: rate,
       commissionAmount: commission,
       description: descInput,
-      period: period
+      period: period,
+      diosgPaid: false,
+      aldiPaid: false,
+      jokoPaid: false
     };
     
     salesData.push(newSale);
@@ -927,6 +988,7 @@ async function handleFormSubmit(e) {
   updateDashboard();
   populatePeriodFilter();
   renderSalesTable();
+  renderPayoutsTable();
   // On mobile: switch to table tab after saving
   if (window.innerWidth <= 1100) {
     switchTab('table');
@@ -1068,6 +1130,7 @@ window.deleteSale = async function(id) {
     updateDashboard();
     populatePeriodFilter();
     renderSalesTable();
+    renderPayoutsTable();
     showToast("Transaksi berhasil dihapus.");
   }
 };
@@ -1096,6 +1159,7 @@ async function triggerResetPeriodData() {
     updateDashboard();
     populatePeriodFilter();
     renderSalesTable();
+    renderPayoutsTable();
     showToast("Data periode aktif berhasil di-reset.");
   }
 }
@@ -1232,6 +1296,7 @@ function handleJSONImport(e) {
         updateDashboard();
         populatePeriodFilter();
         renderSalesTable();
+        renderPayoutsTable();
         showToast(`Impor berhasil! ${mergedCount} transaksi baru diunggah ke Firebase.`);
       }
 
@@ -1245,4 +1310,233 @@ function handleJSONImport(e) {
   };
 
   reader.readAsText(file);
+}
+
+// --- PAYOUT MODULE HELPER FUNCTIONS ---
+
+async function savePayoutRecord(period, diosgVal, aldiVal, jokoVal) {
+  if (!db) return;
+  try {
+    if (!periodPayoutsData[period]) {
+      periodPayoutsData[period] = {};
+    }
+    periodPayoutsData[period].diosgPaid = diosgVal;
+    periodPayoutsData[period].aldiPaid = aldiVal;
+    periodPayoutsData[period].jokoPaid = jokoVal;
+
+    await db.ref(`period_payouts/${period}`).set(periodPayoutsData[period]);
+    triggerSheetsSync(); // trigger sheets sync immediately
+  } catch (e) {
+    console.error("Failed to save payout record:", e);
+    showToast("Gagal menyimpan data pembayaran.", "error");
+  }
+}
+
+window.switchDataTab = function(tab) {
+  currentActiveViewTab = tab;
+  
+  const btnList = document.getElementById('data-tab-btn-list');
+  const btnPayout = document.getElementById('data-tab-btn-payout');
+  const viewList = document.getElementById('view-transactions-list');
+  const viewPayout = document.getElementById('view-payouts-list');
+  
+  if (!btnList || !btnPayout || !viewList || !viewPayout) return;
+
+  if (tab === 'list') {
+    btnList.classList.add('active');
+    btnPayout.classList.remove('active');
+    viewList.classList.remove('hidden');
+    viewPayout.classList.add('hidden');
+    renderSalesTable();
+  } else {
+    btnPayout.classList.add('active');
+    btnList.classList.remove('active');
+    viewPayout.classList.remove('hidden');
+    viewList.classList.add('hidden');
+    renderPayoutsTable();
+  }
+};
+
+window.togglePayoutStatus = async function(id, person, isChecked) {
+  const sale = salesData.find(item => item.id === id);
+  if (!sale) return;
+
+  if (person === 'diosg') sale.diosgPaid = isChecked;
+  else if (person === 'aldi') sale.aldiPaid = isChecked;
+  else if (person === 'joko') sale.jokoPaid = isChecked;
+
+  renderPayoutsTable();
+  await saveSaleRecord(sale);
+};
+
+function renderPayoutsTable() {
+  const tbody = document.getElementById('payout-tbody');
+  if (!tbody) return;
+
+  const periodFilter = document.getElementById('period-filter').value;
+  const activePeriod = getActivePeriodLabel();
+
+  let targetPeriod = periodFilter;
+  if (periodFilter === 'current') {
+    targetPeriod = activePeriod;
+  }
+
+  let filteredSales = salesData;
+  if (targetPeriod !== 'all') {
+    filteredSales = filteredSales.filter(sale => sale.period === targetPeriod);
+  }
+
+  filteredSales.sort((a, b) => {
+    if (a.date !== b.date) {
+      return b.date.localeCompare(a.date);
+    }
+    return b.id.localeCompare(a.id);
+  });
+
+  let totalNet = 0;
+  let totalDiosg = 0;
+  let totalAldi = 0;
+  let totalJoko = 0;
+
+  filteredSales.forEach(sale => {
+    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
+    totalNet += net;
+    totalDiosg += Math.round(net * 0.60);
+    totalAldi += Math.round(net * 0.20);
+    totalJoko += Math.round(net * 0.20);
+  });
+
+  document.getElementById('payout-total-diosg').textContent = formatFullRupiah(totalDiosg);
+  document.getElementById('payout-total-aldi').textContent = formatFullRupiah(totalAldi);
+  document.getElementById('payout-total-joko').textContent = formatFullRupiah(totalJoko);
+
+  const isPeriodAll = targetPeriod === 'all';
+  const inputDiosgEl = document.getElementById('payout-input-diosg');
+  const inputAldiEl = document.getElementById('payout-input-aldi');
+  const inputJokoEl = document.getElementById('payout-input-joko');
+
+  if (isPeriodAll) {
+    inputDiosgEl.value = 'Semua Periode';
+    inputAldiEl.value = 'Semua Periode';
+    inputJokoEl.value = 'Semua Periode';
+    inputDiosgEl.disabled = true;
+    inputAldiEl.disabled = true;
+    inputJokoEl.disabled = true;
+  } else {
+    inputDiosgEl.disabled = false;
+    inputAldiEl.disabled = false;
+    inputJokoEl.disabled = false;
+
+    const payoutInfo = periodPayoutsData[targetPeriod] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
+    inputDiosgEl.value = payoutInfo.diosgPaid ? formatNumberRupiah(payoutInfo.diosgPaid) : '';
+    inputAldiEl.value = payoutInfo.aldiPaid ? formatNumberRupiah(payoutInfo.aldiPaid) : '';
+    inputJokoEl.value = payoutInfo.jokoPaid ? formatNumberRupiah(payoutInfo.jokoPaid) : '';
+  }
+
+  updatePayoutRemainingCalculations(totalDiosg, totalAldi, totalJoko, targetPeriod);
+
+  tbody.innerHTML = '';
+
+  if (filteredSales.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-state">
+        <td colspan="6">
+          <div class="empty-state-content">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <p>Belum ada data payout pada periode ini.</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  filteredSales.forEach(sale => {
+    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
+    const diosgShare = Math.round(net * 0.60);
+    const aldiShare = Math.round(net * 0.20);
+    const jokoShare = Math.round(net * 0.20);
+
+    const row = document.createElement('tr');
+    
+    const diosgClass = sale.diosgPaid ? 'payout-toggle paid' : 'payout-toggle';
+    const aldiClass = sale.aldiPaid ? 'payout-toggle paid' : 'payout-toggle';
+    const jokoClass = sale.jokoPaid ? 'payout-toggle paid' : 'payout-toggle';
+
+    row.innerHTML = `
+      <td class="table-date">${formatDisplayDate(sale.date)}</td>
+      <td>
+        <div class="table-product" style="font-size:11px; color:var(--text-muted);">${escapeHTML(sale.product)}</div>
+        <div style="font-weight:600; font-size:13px; margin-top:2px;">${escapeHTML(sale.description || 'Tanpa catatan')}</div>
+      </td>
+      <td style="text-align: right;" class="table-price">${formatNumberRupiah(net)}</td>
+      <td style="text-align: center;">
+        <label class="${diosgClass}">
+          <input type="checkbox" ${sale.diosgPaid ? 'checked' : ''} onchange="togglePayoutStatus('${sale.id}', 'diosg', this.checked)">
+          <span>${formatNumberRupiah(diosgShare)}</span>
+        </label>
+      </td>
+      <td style="text-align: center;">
+        <label class="${aldiClass}">
+          <input type="checkbox" ${sale.aldiPaid ? 'checked' : ''} onchange="togglePayoutStatus('${sale.id}', 'aldi', this.checked)">
+          <span>${formatNumberRupiah(aldiShare)}</span>
+        </label>
+      </td>
+      <td style="text-align: center;">
+        <label class="${jokoClass}">
+          <input type="checkbox" ${sale.jokoPaid ? 'checked' : ''} onchange="togglePayoutStatus('${sale.id}', 'joko', this.checked)">
+          <span>${formatNumberRupiah(jokoShare)}</span>
+        </label>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function updatePayoutRemainingCalculations(totalDiosg, totalAldi, totalJoko, period) {
+  const remDiosgEl = document.getElementById('payout-remaining-diosg');
+  const remAldiEl = document.getElementById('payout-remaining-aldi');
+  const remJokoEl = document.getElementById('payout-remaining-joko');
+
+  const footerDiosgEl = document.getElementById('payout-footer-rem-diosg');
+  const footerAldiEl = document.getElementById('payout-footer-rem-aldi');
+  const footerJokoEl = document.getElementById('payout-footer-rem-joko');
+
+  if (!remDiosgEl || !remAldiEl || !remJokoEl || !footerDiosgEl || !footerAldiEl || !footerJokoEl) return;
+
+  if (period === 'all') {
+    remDiosgEl.textContent = 'Rp 0';
+    remAldiEl.textContent = 'Rp 0';
+    remJokoEl.textContent = 'Rp 0';
+    footerDiosgEl.textContent = 'Rp 0';
+    footerAldiEl.textContent = 'Rp 0';
+    footerJokoEl.textContent = 'Rp 0';
+    return;
+  }
+
+  const payoutInfo = periodPayoutsData[period] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
+  
+  const paidDiosg = Number(payoutInfo.diosgPaid || 0);
+  const paidAldi = Number(payoutInfo.aldiPaid || 0);
+  const paidJoko = Number(payoutInfo.jokoPaid || 0);
+
+  const remDiosg = totalDiosg - paidDiosg;
+  const remAldi = totalAldi - paidAldi;
+  const remJoko = totalJoko - paidJoko;
+
+  const displayRemaining = (val, el, footerEl) => {
+    el.textContent = formatFullRupiah(val);
+    footerEl.textContent = formatFullRupiah(val);
+    if (val <= 0) {
+      el.className = "sisa-val lunas";
+      footerEl.className = "text-emerald";
+    } else {
+      el.className = "sisa-val";
+      footerEl.className = "text-amber";
+    }
+  };
+
+  displayRemaining(remDiosg, remDiosgEl, footerDiosgEl);
+  displayRemaining(remAldi, remAldiEl, footerAldiEl);
+  displayRemaining(remJoko, remJokoEl, footerJokoEl);
 }

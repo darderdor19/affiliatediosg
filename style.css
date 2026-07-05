@@ -1487,3 +1487,258 @@ select option {
   }
 }
 
+/* ==========================================================================
+   DATA TABS & PAYOUT STYLING (DIOSG, ALDI, JOKO PAYMENT STATUS)
+   ========================================================================== */
+
+/* Data Tabs in Header Actions */
+.data-tabs {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  gap: 4px;
+}
+
+.data-tab-btn {
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.data-tab-btn:hover {
+  color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.data-tab-btn.active {
+  color: #fff;
+  background-color: var(--color-primary);
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+}
+
+/* Manual Payout Inputs Card */
+.payout-inputs-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(17, 24, 39, 0.6) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.payout-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.payout-card-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.payout-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .payout-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.payout-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  position: relative;
+}
+
+.payout-input-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.payout-input-group.diosg::before { background-color: var(--color-primary); }
+.payout-input-group.aldi::before { background-color: var(--color-amber); }
+.payout-input-group.joko::before { background-color: var(--color-emerald); }
+
+.payout-input-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.payout-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.payout-input-wrapper .prefix {
+  position: absolute;
+  left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted-dark);
+}
+
+.payout-input-wrapper input {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  padding: 6px 8px 6px 28px;
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', monospace;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+}
+
+.payout-input-wrapper input:focus {
+  border-color: rgba(99, 102, 241, 0.4);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.payout-calc-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  margin-top: 6px;
+  color: var(--text-muted);
+}
+
+.payout-calc-info strong {
+  font-family: 'Plus Jakarta Sans', monospace;
+  color: var(--text-main);
+}
+
+.payout-calc-info .sisa-val {
+  color: var(--color-amber);
+}
+
+.payout-calc-info .sisa-val.lunas {
+  color: var(--color-emerald);
+}
+
+/* Checkbox Toggle inside Payout Table */
+.payout-toggle {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  user-select: none;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  color: var(--text-muted);
+}
+
+.payout-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-hover);
+}
+
+.payout-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-emerald);
+  cursor: pointer;
+  margin: 0;
+}
+
+.payout-toggle.paid {
+  background-color: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+
+.payout-toggle.paid:hover {
+  background-color: rgba(16, 185, 129, 0.15);
+}
+
+/* Payout Footer Summary */
+.payout-footer-summary {
+  margin-top: 16px;
+}
+
+.payout-summary-card {
+  background-color: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.payout-summary-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.payout-summary-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .payout-summary-values {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.payout-summary-values div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.payout-summary-values div strong {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', monospace;
+  color: var(--text-main);
+}
+
+

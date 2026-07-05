@@ -327,8 +327,10 @@
       <div class="workspace-card data-container" id="panel-table">
         <div class="card-header-actions">
           <div class="card-title-group">
-            <h3>Daftar Transaksi Affiliate</h3>
-            <p>Kelola data penjualan dan pantau performa komisi bulanan Anda.</p>
+            <div class="data-tabs">
+              <button type="button" class="data-tab-btn active" id="data-tab-btn-list" onclick="switchDataTab('list')">📋 List Transaksi</button>
+              <button type="button" class="data-tab-btn" id="data-tab-btn-payout" onclick="switchDataTab('payout')">💰 Status Payout</button>
+            </div>
           </div>
           
           <!-- Period Selector Dropdown -->
@@ -344,119 +346,197 @@
           </div>
         </div>
 
-        <!-- Controls Toolbar -->
-        <div class="toolbar">
-          <div class="toolbar-left">
-            <div class="search-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" id="search-input" placeholder="Cari produk, deskripsi..." list="product-suggestions" autocomplete="off">
-              <datalist id="product-suggestions">
-                <option value="AKADEMI MARKETER"></option>
-                <option value="AKADEMI CREATOR"></option>
-                <option value="AKADEMI PAJAK"></option>
-                <option value="FAST TRACK AKADEMI CREATOR"></option>
-                <option value="FAST TRACK AKADEMI MARKETER"></option>
-              </datalist>
+        <!-- VIEW 1: TRANSACTIONS LIST -->
+        <div id="view-transactions-list">
+          <!-- Controls Toolbar -->
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <div class="search-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-input" placeholder="Cari produk, deskripsi..." list="product-suggestions" autocomplete="off">
+                <datalist id="product-suggestions">
+                  <option value="AKADEMI MARKETER"></option>
+                  <option value="AKADEMI CREATOR"></option>
+                  <option value="AKADEMI PAJAK"></option>
+                  <option value="FAST TRACK AKADEMI CREATOR"></option>
+                  <option value="FAST TRACK AKADEMI MARKETER"></option>
+                </datalist>
+              </div>
+              <div class="select-wrapper filter">
+                <select id="product-filter">
+                  <option value="all">Semua Produk</option>
+                  <option value="AKADEMI MARKETER">AKADEMI MARKETER</option>
+                  <option value="AKADEMI CREATOR">AKADEMI CREATOR</option>
+                  <option value="AKADEMI PAJAK">AKADEMI PAJAK</option>
+                  <option value="FAST TRACK AKADEMI CREATOR">FAST TRACK AKADEMI CREATOR</option>
+                  <option value="FAST TRACK AKADEMI MARKETER">FAST TRACK AKADEMI MARKETER</option>
+                </select>
+              </div>
             </div>
-            <div class="select-wrapper filter">
-              <select id="product-filter">
-                <option value="all">Semua Produk</option>
-                <option value="AKADEMI MARKETER">AKADEMI MARKETER</option>
-                <option value="AKADEMI CREATOR">AKADEMI CREATOR</option>
-                <option value="AKADEMI PAJAK">AKADEMI PAJAK</option>
-                <option value="FAST TRACK AKADEMI CREATOR">FAST TRACK AKADEMI CREATOR</option>
-                <option value="FAST TRACK AKADEMI MARKETER">FAST TRACK AKADEMI MARKETER</option>
-              </select>
-            </div>
-          </div>
-          <div class="toolbar-actions">
-            <button id="btn-export-csv" class="btn btn-tool" title="Ekspor data ke file CSV">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span>CSV</span>
-            </button>
-            
-            <div class="dropdown-container">
-              <button id="btn-backup-menu" class="btn btn-tool">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
-                <span>Backup</span>
+            <div class="toolbar-actions">
+              <button id="btn-export-csv" class="btn btn-tool" title="Ekspor data ke file CSV">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span>CSV</span>
               </button>
-              <div class="dropdown-menu" id="backup-dropdown">
-                <button id="btn-backup-export" class="dropdown-item">Ekspor Data (.json)</button>
-                <button id="btn-backup-import" class="dropdown-item">Impor Data (.json)</button>
-                <input type="file" id="file-import" accept=".json" style="display: none;">
+              
+              <div class="dropdown-container">
+                <button id="btn-backup-menu" class="btn btn-tool">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
+                  <span>Backup</span>
+                </button>
+                <div class="dropdown-menu" id="backup-dropdown">
+                  <button id="btn-backup-export" class="dropdown-item">Ekspor Data (.json)</button>
+                  <button id="btn-backup-import" class="dropdown-item">Impor Data (.json)</button>
+                  <input type="file" id="file-import" accept=".json" style="display: none;">
+                </div>
+              </div>
+
+              <button id="btn-reset-data" class="btn btn-danger-tool" title="Hapus seluruh data periode aktif">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="table-container">
+            <table class="data-table" id="sales-table">
+              <thead>
+                <tr>
+                  <th style="width: 10%;">Tanggal</th>
+                  <th style="width: 18%;">Produk</th>
+                  <th style="width: 13%; text-align: right;">Harga Normal</th>
+                  <th style="width: 13%; text-align: right;">Harga Deal</th>
+                  <th style="width: 10%; text-align: center;">Kupon / Rate</th>
+                  <th style="width: 13%; text-align: right;">Komisi</th>
+                  <th style="width: 14%;">Deskripsi</th>
+                  <th style="width: 9%; text-align: center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="sales-tbody">
+                <!-- Dynamically populated rows -->
+                <tr class="empty-state">
+                  <td colspan="8">
+                    <div class="empty-state-content">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                      <p>Belum ada data penjualan pada periode ini.</p>
+                      <small>Silakan tambahkan data penjualan menggunakan form di sebelah kiri.</small>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Footer Summary -->
+          <div class="table-footer-summary">
+            <div class="summary-main-row">
+              <div class="footer-summary-item">
+                <span>Subtotal Harga Deal:</span>
+                <strong id="table-summary-total-price">Rp 0</strong>
+              </div>
+              <div class="footer-summary-item highlight">
+                <span>Total Komisi Kotor:</span>
+                <strong id="table-summary-total-commission" class="text-emerald">Rp 0</strong>
               </div>
             </div>
-
-            <button id="btn-reset-data" class="btn btn-danger-tool" title="Hapus seluruh data periode aktif">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-              <span>Reset</span>
-            </button>
+            <div class="summary-breakdown-panel">
+              <div class="summary-breakdown-row">
+                <span class="breakdown-label">Potongan Admin (20,7%):</span>
+                <span class="breakdown-value text-danger" id="table-summary-deduction">-Rp 0</span>
+              </div>
+              <div class="summary-breakdown-row highlight-net">
+                <span class="breakdown-label">Total Komisi Bersih (Final):</span>
+                <span class="breakdown-value text-emerald" id="table-summary-net">Rp 0</span>
+              </div>
+              <div class="summary-shares-grid">
+                <div class="summary-share-card diosg">
+                  <span class="share-title">DIOSG (60%)</span>
+                  <strong class="share-amount text-emerald" id="table-summary-diosg">Rp 0</strong>
+                </div>
+                <div class="summary-share-card aldi">
+                  <span class="share-title">ALDI (20%)</span>
+                  <strong class="share-amount text-emerald" id="table-summary-aldi">Rp 0</strong>
+                </div>
+                <div class="summary-share-card joko">
+                  <span class="share-title">Joko (20%)</span>
+                  <strong class="share-amount text-emerald" id="table-summary-joko">Rp 0</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Table Container -->
-        <div class="table-container">
-          <table class="data-table" id="sales-table">
-            <thead>
-              <tr>
-                <th style="width: 10%;">Tanggal</th>
-                <th style="width: 18%;">Produk</th>
-                <th style="width: 13%; text-align: right;">Harga Normal</th>
-                <th style="width: 13%; text-align: right;">Harga Deal</th>
-                <th style="width: 10%; text-align: center;">Kupon / Rate</th>
-                <th style="width: 13%; text-align: right;">Komisi</th>
-                <th style="width: 14%;">Deskripsi</th>
-                <th style="width: 9%; text-align: center;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="sales-tbody">
-              <!-- Dynamically populated rows -->
-              <tr class="empty-state">
-                <td colspan="8">
-                  <div class="empty-state-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    <p>Belum ada data penjualan pada periode ini.</p>
-                    <small>Silakan tambahkan data penjualan menggunakan form di sebelah kiri.</small>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Table Footer Summary -->
-        <div class="table-footer-summary">
-          <div class="summary-main-row">
-            <div class="footer-summary-item">
-              <span>Subtotal Harga Deal:</span>
-              <strong id="table-summary-total-price">Rp 0</strong>
-            </div>
-            <div class="footer-summary-item highlight">
-              <span>Total Komisi Kotor:</span>
-              <strong id="table-summary-total-commission" class="text-emerald">Rp 0</strong>
+        <!-- VIEW 2: PAYOUT STATUS -->
+        <div id="view-payouts-list" class="hidden">
+          <!-- Manual Payout Inputs Card -->
+          <div class="payout-inputs-card">
+            <h4 class="payout-card-title">📝 Kelola Pembayaran Payout (Sudah Dibagikan)</h4>
+            <p class="payout-card-subtitle">Input nominal yang sudah ditransfer ke masing-masing pihak untuk periode ini.</p>
+            <div class="payout-inputs-grid">
+              <div class="payout-input-group diosg">
+                <label>DIOSG (60%)</label>
+                <div class="payout-input-wrapper">
+                  <span class="prefix">Rp</span>
+                  <input type="text" id="payout-input-diosg" placeholder="0" autocomplete="off">
+                </div>
+                <div class="payout-calc-info">
+                  <span>Porsi: <strong id="payout-total-diosg">Rp 0</strong></span>
+                  <span>Sisa: <strong id="payout-remaining-diosg" class="sisa-val">Rp 0</strong></span>
+                </div>
+              </div>
+              <div class="payout-input-group aldi">
+                <label>ALDI (20%)</label>
+                <div class="payout-input-wrapper">
+                  <span class="prefix">Rp</span>
+                  <input type="text" id="payout-input-aldi" placeholder="0" autocomplete="off">
+                </div>
+                <div class="payout-calc-info">
+                  <span>Porsi: <strong id="payout-total-aldi">Rp 0</strong></span>
+                  <span>Sisa: <strong id="payout-remaining-aldi" class="sisa-val">Rp 0</strong></span>
+                </div>
+              </div>
+              <div class="payout-input-group joko">
+                <label>Joko (20%)</label>
+                <div class="payout-input-wrapper">
+                  <span class="prefix">Rp</span>
+                  <input type="text" id="payout-input-joko" placeholder="0" autocomplete="off">
+                </div>
+                <div class="payout-calc-info">
+                  <span>Porsi: <strong id="payout-total-joko">Rp 0</strong></span>
+                  <span>Sisa: <strong id="payout-remaining-joko" class="sisa-val">Rp 0</strong></span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="summary-breakdown-panel">
-            <div class="summary-breakdown-row">
-              <span class="breakdown-label">Potongan Admin (20,7%):</span>
-              <span class="breakdown-value text-danger" id="table-summary-deduction">-Rp 0</span>
-            </div>
-            <div class="summary-breakdown-row highlight-net">
-              <span class="breakdown-label">Total Komisi Bersih (Final):</span>
-              <span class="breakdown-value text-emerald" id="table-summary-net">Rp 0</span>
-            </div>
-            <div class="summary-shares-grid">
-              <div class="summary-share-card diosg">
-                <span class="share-title">DIOSG (60%)</span>
-                <strong class="share-amount text-emerald" id="table-summary-diosg">Rp 0</strong>
-              </div>
-              <div class="summary-share-card aldi">
-                <span class="share-title">ALDI (20%)</span>
-                <strong class="share-amount text-emerald" id="table-summary-aldi">Rp 0</strong>
-              </div>
-              <div class="summary-share-card joko">
-                <span class="share-title">Joko (20%)</span>
-                <strong class="share-amount text-emerald" id="table-summary-joko">Rp 0</strong>
+
+          <!-- Payout Table Container -->
+          <div class="table-container payout-table-container">
+            <table class="data-table" id="payout-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%;">Tanggal</th>
+                  <th style="width: 25%;">Deskripsi / Catatan</th>
+                  <th style="width: 15%; text-align: right;">Komisi Bersih</th>
+                  <th style="width: 16%; text-align: center;">DIOSG (60%)</th>
+                  <th style="width: 16%; text-align: center;">ALDI (20%)</th>
+                  <th style="width: 16%; text-align: center;">Joko (20%)</th>
+                </tr>
+              </thead>
+              <tbody id="payout-tbody">
+                <!-- Javascript will populate rows dynamically -->
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Payout Footer Summary -->
+          <div class="payout-footer-summary">
+            <div class="payout-summary-card">
+              <span class="payout-summary-title">Ringkasan Sisa Saldo Payout Periode Terpilih</span>
+              <div class="payout-summary-values">
+                <div><span>DIOSG Sisa:</span><strong id="payout-footer-rem-diosg">Rp 0</strong></div>
+                <div><span>ALDI Sisa:</span><strong id="payout-footer-rem-aldi">Rp 0</strong></div>
+                <div><span>Joko Sisa:</span><strong id="payout-footer-rem-joko">Rp 0</strong></div>
               </div>
             </div>
           </div>
