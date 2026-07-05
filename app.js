@@ -1398,9 +1398,20 @@ function renderPayoutsTable() {
   const inputJokoEl = document.getElementById('payout-input-joko');
 
   if (isPeriodAll) {
-    inputDiosgEl.value = 'Semua Periode';
-    inputAldiEl.value = 'Semua Periode';
-    inputJokoEl.value = 'Semua Periode';
+    let paidDiosg = 0;
+    let paidAldi = 0;
+    let paidJoko = 0;
+
+    Object.keys(periodPayoutsData).forEach(pKey => {
+      paidDiosg += Number(periodPayoutsData[pKey].diosgPaid || 0);
+      paidAldi += Number(periodPayoutsData[pKey].aldiPaid || 0);
+      paidJoko += Number(periodPayoutsData[pKey].jokoPaid || 0);
+    });
+
+    inputDiosgEl.value = paidDiosg ? formatNumberRupiah(paidDiosg) : '0';
+    inputAldiEl.value = paidAldi ? formatNumberRupiah(paidAldi) : '0';
+    inputJokoEl.value = paidJoko ? formatNumberRupiah(paidJoko) : '0';
+    
     inputDiosgEl.disabled = true;
     inputAldiEl.disabled = true;
     inputJokoEl.disabled = true;
@@ -1467,21 +1478,22 @@ function updatePayoutRemainingCalculations(totalDiosg, totalAldi, totalJoko, per
 
   if (!remDiosgEl || !remAldiEl || !remJokoEl || !footerDiosgEl || !footerAldiEl || !footerJokoEl) return;
 
-  if (period === 'all') {
-    remDiosgEl.textContent = 'Rp 0';
-    remAldiEl.textContent = 'Rp 0';
-    remJokoEl.textContent = 'Rp 0';
-    footerDiosgEl.textContent = 'Rp 0';
-    footerAldiEl.textContent = 'Rp 0';
-    footerJokoEl.textContent = 'Rp 0';
-    return;
-  }
+  let paidDiosg = 0;
+  let paidAldi = 0;
+  let paidJoko = 0;
 
-  const payoutInfo = periodPayoutsData[period] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
-  
-  const paidDiosg = Number(payoutInfo.diosgPaid || 0);
-  const paidAldi = Number(payoutInfo.aldiPaid || 0);
-  const paidJoko = Number(payoutInfo.jokoPaid || 0);
+  if (period === 'all') {
+    Object.keys(periodPayoutsData).forEach(pKey => {
+      paidDiosg += Number(periodPayoutsData[pKey].diosgPaid || 0);
+      paidAldi += Number(periodPayoutsData[pKey].aldiPaid || 0);
+      paidJoko += Number(periodPayoutsData[pKey].jokoPaid || 0);
+    });
+  } else {
+    const payoutInfo = periodPayoutsData[period] || { diosgPaid: 0, aldiPaid: 0, jokoPaid: 0 };
+    paidDiosg = Number(payoutInfo.diosgPaid || 0);
+    paidAldi = Number(payoutInfo.aldiPaid || 0);
+    paidJoko = Number(payoutInfo.jokoPaid || 0);
+  }
 
   const remDiosg = totalDiosg - paidDiosg;
   const remAldi = totalAldi - paidAldi;
