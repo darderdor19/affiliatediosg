@@ -65,9 +65,9 @@
             <span class="label">Komisi Bersih (Final):</span>
             <span class="val text-emerald" id="stat-current-net">Rp 0</span>
           </div>
-          <div class="shares-row">
+          <div class="shares-row" id="shares-row-main">
             <div class="share-box">
-              <span class="share-name">DIOSG (60%)</span>
+              <span class="share-name" id="label-current-diosg">DIOSG (60%)</span>
               <span class="share-val" id="stat-current-diosg">Rp 0</span>
             </div>
             <div class="share-box">
@@ -77,6 +77,10 @@
             <div class="share-box">
               <span class="share-name">Joko (20%)</span>
               <span class="share-val" id="stat-current-joko">Rp 0</span>
+            </div>
+            <div class="share-box" id="share-box-ndine" style="display:none;">
+              <span class="share-name" style="color:var(--color-amber);">Ndine (10%)</span>
+              <span class="share-val text-amber" id="stat-current-ndine">Rp 0</span>
             </div>
           </div>
         </div>
@@ -293,6 +297,20 @@
             <textarea id="sale-description" rows="3" placeholder="Masukkan nama pembeli, email, nomor invoice, atau catatan lainnya..."></textarea>
           </div>
 
+          <!-- Sumber Leads -->
+          <div class="form-group">
+            <label for="sale-leads-source">Sumber Leads</label>
+            <div class="select-wrapper">
+              <select id="sale-leads-source">
+                <option value="">— Pilih Sumber Leads —</option>
+                <option value="fast-track">Fast Track (Leads Ndine)</option>
+                <option value="organic">Organik / Diri Sendiri</option>
+                <option value="other">Lainnya</option>
+              </select>
+            </div>
+            <small class="form-help" id="leads-source-hint" style="display:none; color:var(--color-amber);">⚡ Fast Track terdeteksi — Ndine mendapat komisi 10% (dipotong dari DIOSG).</small>
+          </div>
+
           <!-- Live Commission Preview -->
           <div class="commission-preview-card">
             <div class="preview-row">
@@ -449,9 +467,9 @@
                 <span class="breakdown-label">Total Komisi Bersih (Final):</span>
                 <span class="breakdown-value text-emerald" id="table-summary-net">Rp 0</span>
               </div>
-              <div class="summary-shares-grid">
+              <div class="summary-shares-grid" id="summary-shares-grid">
                 <div class="summary-share-card diosg">
-                  <span class="share-title">DIOSG (60%)</span>
+                  <span class="share-title" id="label-table-diosg">DIOSG (60%)</span>
                   <strong class="share-amount text-emerald" id="table-summary-diosg">Rp 0</strong>
                 </div>
                 <div class="summary-share-card aldi">
@@ -461,6 +479,10 @@
                 <div class="summary-share-card joko">
                   <span class="share-title">Joko (20%)</span>
                   <strong class="share-amount text-emerald" id="table-summary-joko">Rp 0</strong>
+                </div>
+                <div class="summary-share-card ndine" id="summary-share-ndine" style="display:none;">
+                  <span class="share-title" style="color:var(--color-amber);">Ndine (10%)</span>
+                  <strong class="share-amount text-amber" id="table-summary-ndine">Rp 0</strong>
                 </div>
               </div>
             </div>
@@ -483,11 +505,12 @@
                 <div class="form-group">
                   <label for="payout-recipient">Nama Penerima</label>
                   <div class="select-wrapper">
-                    <select id="payout-recipient" required>
+                  <select id="payout-recipient" required>
                       <option value="" disabled selected>Pilih Penerima...</option>
                       <option value="DIOSG">DIOSG (60%)</option>
                       <option value="ALDI">ALDI (20%)</option>
                       <option value="Joko">Joko (20%)</option>
+                      <option value="Ndine">Ndine (10% Fast Track)</option>
                     </select>
                   </div>
                 </div>
@@ -515,7 +538,7 @@
               <!-- Summary Balances (Porsi vs Sisa) -->
               <div class="payout-balances-grid">
                 <div class="payout-balance-card diosg">
-                  <span class="card-name">DIOSG (60%)</span>
+                  <span class="card-name" id="payout-label-diosg">DIOSG (60%)</span>
                   <div class="card-row"><span>Porsi:</span><strong id="payout-total-diosg">Rp 0</strong></div>
                   <div class="card-row"><span>Sudah:</span><strong id="payout-paid-diosg" class="text-emerald">Rp 0</strong></div>
                   <div class="card-row divider"><span>Sisa:</span><strong id="payout-remaining-diosg" class="sisa-val">Rp 0</strong></div>
@@ -531,6 +554,12 @@
                   <div class="card-row"><span>Porsi:</span><strong id="payout-total-joko">Rp 0</strong></div>
                   <div class="card-row"><span>Sudah:</span><strong id="payout-paid-joko" class="text-emerald">Rp 0</strong></div>
                   <div class="card-row divider"><span>Sisa:</span><strong id="payout-remaining-joko" class="sisa-val">Rp 0</strong></div>
+                </div>
+                <div class="payout-balance-card ndine" id="payout-card-ndine">
+                  <span class="card-name" style="color:var(--color-amber);">Ndine (10% FT)</span>
+                  <div class="card-row"><span>Porsi:</span><strong id="payout-total-ndine">Rp 0</strong></div>
+                  <div class="card-row"><span>Sudah:</span><strong id="payout-paid-ndine" class="text-emerald">Rp 0</strong></div>
+                  <div class="card-row divider"><span>Sisa:</span><strong id="payout-remaining-ndine" class="sisa-val">Rp 0</strong></div>
                 </div>
               </div>
 

@@ -153,7 +153,8 @@ async function loadSalesData() {
           commissionRate: Number(data.commissionRate),
           commissionAmount: Number(data.commissionAmount),
           description: data.description || '',
-          period: data.period || getPeriodLabel(data.date)
+          period: data.period || getPeriodLabel(data.date),
+          leadsSource: data.leadsSource || ''
         });
       });
     }
@@ -331,6 +332,15 @@ function initEventListeners() {
     handleProductSelection();
     updatePreview();
   });
+
+  // Leads source change handler — show/hide hint and auto-suggest
+  const leadsSourceSelect = document.getElementById('sale-leads-source');
+  const leadsSourceHint = document.getElementById('leads-source-hint');
+  if (leadsSourceSelect && leadsSourceHint) {
+    leadsSourceSelect.addEventListener('change', () => {
+      leadsSourceHint.style.display = leadsSourceSelect.value === 'fast-track' ? 'block' : 'none';
+    });
+  }
 
   // Payout form date default value (today)
   const payoutDateEl = document.getElementById('payout-date');
@@ -662,25 +672,46 @@ function updateDashboard() {
   document.getElementById('stat-all-time-commission').textContent = formatFullRupiah(allTimeCommission);
   document.getElementById('stat-all-time-count').textContent = `Dari ${allTimeSalesCount} total penjualan`;
 
-  // Splits for current period
+  // Splits for current period — apply per-sale share logic
   const currentDeduction = Math.round(currentPeriodCommission * 0.207);
   const currentNet = currentPeriodCommission - currentDeduction;
-  const currentDiosg = Math.round(currentNet * 0.60);
-  const currentAldi = Math.round(currentNet * 0.20);
-  const currentJoko = Math.round(currentNet * 0.20);
+
+  let currentDiosg = 0, currentAldi = 0, currentJoko = 0, currentNdine = 0;
+  let hasNdine = false;
+  salesData.filter(s => s.period === activePeriod).forEach(s => {
+    const sNet = s.commissionAmount - Math.round(s.commissionAmount * 0.207);
+    const sh = calcShares(sNet, s.leadsSource);
+    currentDiosg += sh.diosg;
+    currentAldi  += sh.aldi;
+    currentJoko  += sh.joko;
+    currentNdine += sh.ndine;
+    if (sh.isFastTrack) hasNdine = true;
+  });
 
   document.getElementById('stat-current-deduction').textContent = `-Rp ${formatNumberRupiah(currentDeduction)}`;
   document.getElementById('stat-current-net').textContent = formatFullRupiah(currentNet);
   document.getElementById('stat-current-diosg').textContent = formatFullRupiah(currentDiosg);
   document.getElementById('stat-current-aldi').textContent = formatFullRupiah(currentAldi);
   document.getElementById('stat-current-joko').textContent = formatFullRupiah(currentJoko);
+  document.getElementById('stat-current-ndine').textContent = formatFullRupiah(currentNdine);
+  // Show/hide Ndine share box in metric card
+  const ndineBox = document.getElementById('share-box-ndine');
+  if (ndineBox) ndineBox.style.display = hasNdine ? '' : 'none';
+  const diosgLabel = document.getElementById('label-current-diosg');
+  if (diosgLabel) diosgLabel.textContent = hasNdine ? 'DIOSG (50%~)' : 'DIOSG (60%)';
 
-  // Splits for all-time
+  // Splits for all-time — apply per-sale share logic
   const allTimeDeduction = Math.round(allTimeCommission * 0.207);
   const allTimeNet = allTimeCommission - allTimeDeduction;
-  const allTimeDiosg = Math.round(allTimeNet * 0.60);
-  const allTimeAldi = Math.round(allTimeNet * 0.20);
-  const allTimeJoko = Math.round(allTimeNet * 0.20);
+
+  let allTimeDiosg = 0, allTimeAldi = 0, allTimeJoko = 0;
+  salesData.forEach(s => {
+    const sNet = s.commissionAmount - Math.round(s.commissionAmount * 0.207);
+    const sh = calcShares(sNet, s.leadsSource);
+    allTimeDiosg += sh.diosg;
+    allTimeAldi  += sh.aldi;
+    allTimeJoko  += sh.joko;
+  });
 
   document.getElementById('stat-alltime-deduction').textContent = `-Rp ${formatNumberRupiah(allTimeDeduction)}`;
   document.getElementById('stat-alltime-net').textContent = formatFullRupiah(allTimeNet);
@@ -838,6 +869,9 @@ function renderSalesTable() {
       const normalPrice = sale.normalPrice || sale.price;
       const dealPrice = sale.dealPrice || sale.price;
 
+      const isFTLeads = sale.leadsSource === 'fast-track';
+      const leadsBadgeHtml = isFTLeads ? `<span style="display:inline-block; font-size:10px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.12); padding:2px 6px; border-radius:4px; margin-bottom:3px;">⚡ Fast Track (Ndine 10%)</span><br>` : '';
+
       row.innerHTML = `
         <td class="table-date">${formatDisplayDate(sale.date)}</td>
         <td>
@@ -851,6 +885,7 @@ function renderSalesTable() {
         </td>
         <td style="text-align: right;" class="table-commission">${formatNumberRupiah(sale.commissionAmount)}</td>
         <td>
+          ${leadsBadgeHtml}
           <div class="table-description" title="${escapeHTML(sale.description)}">${escapeHTML(sale.description)}</div>
         </td>
         <td>
@@ -873,18 +908,33 @@ function renderSalesTable() {
   subtotalPriceEl.textContent = formatFullRupiah(subtotalPrice);
   subtotalCommEl.textContent = formatFullRupiah(subtotalCommission);
 
-  // Calculate splits for the selected period
+  // Calculate splits for the selected period using per-sale share logic
   const deduction = Math.round(subtotalCommission * 0.207);
   const netCommission = subtotalCommission - deduction;
-  const diosgShare = Math.round(netCommission * 0.60);
-  const aldiShare = Math.round(netCommission * 0.20);
-  const jokoShare = Math.round(netCommission * 0.20);
+
+  let diosgShare = 0, aldiShare = 0, jokoShare = 0, ndineShare = 0;
+  let hasNdineInFilter = false;
+  filteredSales.forEach(s => {
+    const sNet = s.commissionAmount - Math.round(s.commissionAmount * 0.207);
+    const sh = calcShares(sNet, s.leadsSource);
+    diosgShare += sh.diosg;
+    aldiShare  += sh.aldi;
+    jokoShare  += sh.joko;
+    ndineShare += sh.ndine;
+    if (sh.isFastTrack) hasNdineInFilter = true;
+  });
 
   document.getElementById('table-summary-deduction').textContent = `-Rp ${formatNumberRupiah(deduction)}`;
   document.getElementById('table-summary-net').textContent = formatFullRupiah(netCommission);
   document.getElementById('table-summary-diosg').textContent = formatFullRupiah(diosgShare);
   document.getElementById('table-summary-aldi').textContent = formatFullRupiah(aldiShare);
   document.getElementById('table-summary-joko').textContent = formatFullRupiah(jokoShare);
+  document.getElementById('table-summary-ndine').textContent = formatFullRupiah(ndineShare);
+  // Show/hide Ndine card in table footer
+  const ndineCard = document.getElementById('summary-share-ndine');
+  if (ndineCard) ndineCard.style.display = hasNdineInFilter ? '' : 'none';
+  const diosgTableLabel = document.getElementById('label-table-diosg');
+  if (diosgTableLabel) diosgTableLabel.textContent = hasNdineInFilter ? 'DIOSG (50%~)' : 'DIOSG (60%)';
 }
 
 // Simple HTML escaping helper
@@ -895,6 +945,22 @@ function escapeHTML(str) {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+}
+
+/**
+ * Calculate share splits based on leadsSource.
+ * If leadsSource === 'fast-track': DIOSG=50%, ALDI=20%, Joko=20%, Ndine=10%
+ * Otherwise: DIOSG=60%, ALDI=20%, Joko=20%, Ndine=0%
+ */
+function calcShares(netCommission, leadsSource) {
+  const isFastTrack = leadsSource === 'fast-track';
+  return {
+    diosg: Math.round(netCommission * (isFastTrack ? 0.50 : 0.60)),
+    aldi : Math.round(netCommission * 0.20),
+    joko : Math.round(netCommission * 0.20),
+    ndine: isFastTrack ? Math.round(netCommission * 0.10) : 0,
+    isFastTrack
+  };
 }
 
 // --- FORM HANDLING ACTIONS ---
@@ -942,6 +1008,8 @@ async function handleFormSubmit(e) {
 
   const isEdit = editIdEl.value !== '';
 
+  const leadsSource = document.getElementById('sale-leads-source').value;
+
   if (isEdit) {
     const index = salesData.findIndex(item => item.id === editIdEl.value);
     if (index !== -1) {
@@ -955,6 +1023,7 @@ async function handleFormSubmit(e) {
       salesData[index].commissionAmount = commission;
       salesData[index].description = descInput;
       salesData[index].period = period;
+      salesData[index].leadsSource = leadsSource;
       
       await saveSaleRecord(salesData[index]);
       showToast("Data penjualan berhasil diperbarui!");
@@ -973,7 +1042,8 @@ async function handleFormSubmit(e) {
       commissionRate: rate,
       commissionAmount: commission,
       description: descInput,
-      period: period
+      period: period,
+      leadsSource: leadsSource
     };
     
     salesData.push(newSale);
@@ -1006,6 +1076,14 @@ window.editSale = function(id) {
   
   // Call product selection handler to disable/enable coupon radios
   handleProductSelection();
+
+  // Populate leadsSource
+  const leadsSourceEl = document.getElementById('sale-leads-source');
+  if (leadsSourceEl) {
+    leadsSourceEl.value = sale.leadsSource || '';
+    const hint = document.getElementById('leads-source-hint');
+    if (hint) hint.style.display = sale.leadsSource === 'fast-track' ? 'block' : 'none';
+  }
 
   // Populate with normalPrice (harga asli), dealPrice will auto-recalculate
   document.getElementById('sale-price').value = formatNumberRupiah(sale.normalPrice || sale.price);
@@ -1443,18 +1521,30 @@ function renderPayoutsTable() {
   let totalDiosgPorsi = 0;
   let totalAldiPorsi = 0;
   let totalJokoPorsi = 0;
+  let totalNdinePorsi = 0;
+  let hasNdineInPayout = false;
 
   filteredSales.forEach(sale => {
     const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
-    totalDiosgPorsi += Math.round(net * 0.60);
-    totalAldiPorsi += Math.round(net * 0.20);
-    totalJokoPorsi += Math.round(net * 0.20);
+    const sh = calcShares(net, sale.leadsSource);
+    totalDiosgPorsi += sh.diosg;
+    totalAldiPorsi  += sh.aldi;
+    totalJokoPorsi  += sh.joko;
+    totalNdinePorsi += sh.ndine;
+    if (sh.isFastTrack) hasNdineInPayout = true;
   });
 
   // Display Portions
   document.getElementById('payout-total-diosg').textContent = formatFullRupiah(totalDiosgPorsi);
   document.getElementById('payout-total-aldi').textContent = formatFullRupiah(totalAldiPorsi);
   document.getElementById('payout-total-joko').textContent = formatFullRupiah(totalJokoPorsi);
+  document.getElementById('payout-total-ndine').textContent = formatFullRupiah(totalNdinePorsi);
+
+  // Show/Hide Ndine payout balance card
+  const payoutCardNdine = document.getElementById('payout-card-ndine');
+  if (payoutCardNdine) payoutCardNdine.style.display = hasNdineInPayout ? '' : 'none';
+  const payoutLabelDiosg = document.getElementById('payout-label-diosg');
+  if (payoutLabelDiosg) payoutLabelDiosg.textContent = hasNdineInPayout ? 'DIOSG (50%~)' : 'DIOSG (60%)';
 
   // 2. Filter payout transactions by period to calculate the total PAID (Sudah)
   let filteredPayouts = payoutTransactionsData;
@@ -1465,23 +1555,27 @@ function renderPayoutsTable() {
   let totalDiosgPaid = 0;
   let totalAldiPaid = 0;
   let totalJokoPaid = 0;
+  let totalNdinePaid = 0;
 
   filteredPayouts.forEach(p => {
     if (p.recipient === 'DIOSG') totalDiosgPaid += p.amount;
     else if (p.recipient === 'ALDI') totalAldiPaid += p.amount;
     else if (p.recipient === 'Joko') totalJokoPaid += p.amount;
+    else if (p.recipient === 'Ndine') totalNdinePaid += p.amount;
   });
 
   // Display Paid
   document.getElementById('payout-paid-diosg').textContent = formatFullRupiah(totalDiosgPaid);
   document.getElementById('payout-paid-aldi').textContent = formatFullRupiah(totalAldiPaid);
   document.getElementById('payout-paid-joko').textContent = formatFullRupiah(totalJokoPaid);
+  document.getElementById('payout-paid-ndine').textContent = formatFullRupiah(totalNdinePaid);
 
   // 3. Calculate and display remaining (Sisa)
   updatePayoutRemainingCalculations(
     totalDiosgPorsi, totalDiosgPaid,
     totalAldiPorsi, totalAldiPaid,
-    totalJokoPorsi, totalJokoPaid
+    totalJokoPorsi, totalJokoPaid,
+    totalNdinePorsi, totalNdinePaid
   );
 
   // 4. Render the payout ledger table rows
@@ -1517,6 +1611,7 @@ function renderPayoutsTable() {
     if (item.recipient === 'DIOSG') recipientColor = 'var(--color-primary)';
     else if (item.recipient === 'ALDI') recipientColor = 'var(--color-amber)';
     else if (item.recipient === 'Joko') recipientColor = 'var(--color-emerald)';
+    else if (item.recipient === 'Ndine') recipientColor = '#f59e0b';
 
     row.innerHTML = `
       <td class="table-date">${formatDisplayDate(item.date)}</td>
@@ -1536,19 +1631,23 @@ function renderPayoutsTable() {
 function updatePayoutRemainingCalculations(
   totalDiosg, paidDiosg,
   totalAldi, paidAldi,
-  totalJoko, paidJoko
+  totalJoko, paidJoko,
+  totalNdine = 0, paidNdine = 0
 ) {
   const remDiosgEl = document.getElementById('payout-remaining-diosg');
   const remAldiEl = document.getElementById('payout-remaining-aldi');
   const remJokoEl = document.getElementById('payout-remaining-joko');
+  const remNdineEl = document.getElementById('payout-remaining-ndine');
 
   if (!remDiosgEl || !remAldiEl || !remJokoEl) return;
 
   const remDiosg = totalDiosg - paidDiosg;
   const remAldi = totalAldi - paidAldi;
   const remJoko = totalJoko - paidJoko;
+  const remNdine = totalNdine - paidNdine;
 
   const displayRemaining = (val, el) => {
+    if (!el) return;
     el.textContent = formatFullRupiah(val);
     if (val <= 0) {
       el.className = "sisa-val lunas";
@@ -1560,4 +1659,5 @@ function updatePayoutRemainingCalculations(
   displayRemaining(remDiosg, remDiosgEl);
   displayRemaining(remAldi, remAldiEl);
   displayRemaining(remJoko, remJokoEl);
+  displayRemaining(remNdine, remNdineEl);
 }
