@@ -11,37 +11,38 @@ const MONTH_NAMES_ID = [
 let salesData = [];
 let currentEditingId = null;
 let payoutTransactionsData = [];
-let currentActiveViewTab = 'list';
+let currentActiveViewTab = 'dashboard';
 
-// --- MOBILE TAB SWITCHER ---
-window.switchTab = function(tab) {
-  const panelForm = document.getElementById('panel-form');
-  const panelTable = document.getElementById('panel-table');
-  const btnForm = document.getElementById('tab-btn-form');
-  const btnTable = document.getElementById('tab-btn-table');
-  if (!panelForm || !panelTable) return;
+// --- CHART INSTANCES ---
+let chartTrendsInstance = null;
+let chartSharesInstance = null;
+let chartProductsInstance = null;
 
-  if (tab === 'form') {
-    panelForm.classList.remove('panel-hidden');
-    panelTable.classList.add('panel-hidden');
-    if (btnForm) btnForm.classList.add('active');
-    if (btnTable) btnTable.classList.remove('active');
-  } else {
-    panelTable.classList.remove('panel-hidden');
-    panelForm.classList.add('panel-hidden');
-    if (btnTable) btnTable.classList.add('active');
-    if (btnForm) btnForm.classList.remove('active');
+// --- MAIN 3-TAB NAVIGATION SWITCHER ---
+window.switchMainTab = function(tabName) {
+  currentActiveViewTab = tabName;
+  const tabs = ['dashboard', 'input', 'payout'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`nav-btn-${t}`);
+    const section = document.getElementById(`tab-${t === 'input' ? 'input-sale' : t}`);
+    if (btn) {
+      if (t === tabName) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+    if (section) {
+      if (t === tabName) section.classList.add('active');
+      else section.classList.remove('active');
+    }
+  });
+
+  if (tabName === 'dashboard') {
+    updateDashboard();
+    renderSalesTable();
+    updateCharts();
+  } else if (tabName === 'payout') {
+    renderPayoutsTable();
   }
 };
-
-// Apply initial mobile tab state
-function initMobileTabs() {
-  if (window.innerWidth <= 1100) {
-    // On mobile, start with form visible, table hidden
-    const panelTable = document.getElementById('panel-table');
-    if (panelTable) panelTable.classList.add('panel-hidden');
-  }
-}
 
 // Firebase Connection Instance
 let db = null;
@@ -70,11 +71,12 @@ function triggerSheetsSync() {
 document.addEventListener('DOMContentLoaded', () => {
   // Set default date input to today
   const today = new Date();
-  document.getElementById('sale-date').value = today.toISOString().split('T')[0];
+  const dateEl = document.getElementById('sale-date');
+  if (dateEl) dateEl.value = today.toISOString().split('T')[0];
 
-  // Initialize UI components and event listeners immediately
+  // Initialize UI components, event listeners and Chart.js immediately
   initEventListeners();
-  initMobileTabs();
+  initCharts();
   
   // Calculate and update metrics with empty/local data first
   updateDashboard();
@@ -82,19 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // Populate period filter options
   populatePeriodFilter();
 
-  // Initial table render
+  // Initial table render & charts update
   renderSalesTable();
+  updateCharts();
 
   // Initialize Firebase and load data in the background
   try {
     const initialized = initializeFirebase(firebaseConfig);
     if (initialized) {
       loadSalesData().then(() => {
-        // Refresh calculations and table after data is fetched from cloud
+        // Refresh calculations, table & charts after data is fetched from cloud
         updateDashboard();
         populatePeriodFilter();
         renderSalesTable();
         renderPayoutsTable();
+        updateCharts();
       }).catch(err => {
         console.error("Gagal memuat data dari Firebase:", err);
       });
@@ -289,6 +293,7 @@ function initEventListeners() {
   periodFilter.addEventListener('change', () => {
     renderSalesTable();
     renderPayoutsTable();
+    updateCharts();
   });
 
   // Product filter change handler
@@ -963,6 +968,224 @@ function calcShares(netCommission, leadsSource) {
   };
 }
 
+// --- CHART INTEGRATION FUNCTIONS ---
+
+function initCharts() {
+  if (typeof Chart === 'undefined') return;
+
+  // Global Chart Defaults
+  Chart.defaults.color = '#9ca3af';
+  Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', sans-serif";
+
+  // 1. Line/Bar Chart: Tren Omset & Komisi
+  const ctxTrends = document.getElementById('chart-trends');
+  if (ctxTrends) {
+    chartTrendsInstance = new Chart(ctxTrends, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Total Omset (Deal Price)',
+            data: [],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#6366f1',
+            pointRadius: 4
+          },
+          {
+            label: 'Komisi Bersih',
+            data: [],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#10b981',
+            pointRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${formatFullRupiah(ctx.raw)}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255, 255, 255, 0.04)' } },
+          y: {
+            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+            ticks: {
+              callback: (val) => 'Rp ' + (val >= 1000000 ? (val / 1000000).toFixed(1) + 'M' : (val / 1000).toFixed(0) + 'K')
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Doughnut Chart: Distribusi Bagi Hasil
+  const ctxShares = document.getElementById('chart-shares');
+  if (ctxShares) {
+    chartSharesInstance = new Chart(ctxShares, {
+      type: 'doughnut',
+      data: {
+        labels: ['DIOSG', 'ALDI', 'Joko', 'Ndine'],
+        datasets: [{
+          data: [0, 0, 0, 0],
+          backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#ec4899'],
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.label}: ${formatFullRupiah(ctx.raw)}`
+            }
+          }
+        },
+        cutout: '68%'
+      }
+    });
+  }
+
+  // 3. Bar Chart: Penjualan Per Produk
+  const ctxProducts = document.getElementById('chart-products');
+  if (ctxProducts) {
+    chartProductsInstance = new Chart(ctxProducts, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Jumlah Transaksi',
+          data: [],
+          backgroundColor: 'rgba(99, 102, 241, 0.65)',
+          borderColor: '#6366f1',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `Penjualan: ${ctx.raw} transaksi`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+}
+
+function updateCharts() {
+  if (typeof Chart === 'undefined') return;
+
+  const periodFilterEl = document.getElementById('period-filter');
+  const periodFilter = periodFilterEl ? periodFilterEl.value : 'current';
+  const activePeriod = getActivePeriodLabel();
+
+  let targetPeriod = periodFilter === 'current' ? activePeriod : periodFilter;
+
+  let filteredSales = salesData;
+  if (targetPeriod !== 'all') {
+    filteredSales = filteredSales.filter(sale => sale.period === targetPeriod);
+  }
+
+  // 1. Update Shares Doughnut Chart
+  let diosgTotal = 0, aldiTotal = 0, jokoTotal = 0, ndineTotal = 0;
+  filteredSales.forEach(sale => {
+    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
+    const sh = calcShares(net, sale.leadsSource);
+    diosgTotal += sh.diosg;
+    aldiTotal += sh.aldi;
+    jokoTotal += sh.joko;
+    ndineTotal += sh.ndine;
+  });
+
+  if (chartSharesInstance) {
+    chartSharesInstance.data.datasets[0].data = [diosgTotal, aldiTotal, jokoTotal, ndineTotal];
+    chartSharesInstance.update();
+  }
+
+  // 2. Update Products Bar Chart
+  const productCounts = {};
+  filteredSales.forEach(sale => {
+    const pName = sale.product || 'Lainnya';
+    productCounts[pName] = (productCounts[pName] || 0) + 1;
+  });
+
+  const pLabels = Object.keys(productCounts);
+  const pData = pLabels.map(k => productCounts[k]);
+
+  if (chartProductsInstance) {
+    chartProductsInstance.data.labels = pLabels.map(l => l.length > 20 ? l.substring(0, 18) + '...' : l);
+    chartProductsInstance.data.datasets[0].data = pData;
+    chartProductsInstance.update();
+  }
+
+  // 3. Update Trends Line Chart
+  const periodMap = {};
+  salesData.forEach(sale => {
+    const p = sale.period || 'Lainnya';
+    if (!periodMap[p]) periodMap[p] = { omset: 0, netComm: 0 };
+    const dealPrice = sale.dealPrice || sale.price || 0;
+    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
+    periodMap[p].omset += dealPrice;
+    periodMap[p].netComm += net;
+  });
+
+  const sortedPeriods = Object.keys(periodMap).sort((a, b) => {
+    const getKey = (label) => {
+      try {
+        const m = label.match(/26\s([A-Za-z]+)\s(\d{4})/);
+        if (m) {
+          const monthIdx = MONTH_NAMES_ID.findIndex(n => n.toLowerCase().startsWith(m[1].toLowerCase()));
+          return parseInt(m[2], 10) * 100 + monthIdx;
+        }
+      } catch (e) {}
+      return 0;
+    };
+    return getKey(a) - getKey(b); // Ascending for trend
+  });
+
+  const tLabels = sortedPeriods.map(p => p.split(' - ')[0]);
+  const tOmset = sortedPeriods.map(p => periodMap[p].omset);
+  const tNet = sortedPeriods.map(p => periodMap[p].netComm);
+
+  if (chartTrendsInstance) {
+    chartTrendsInstance.data.labels = tLabels.length > 0 ? tLabels : ['Belum Ada Data'];
+    chartTrendsInstance.data.datasets[0].data = tOmset.length > 0 ? tOmset : [0];
+    chartTrendsInstance.data.datasets[1].data = tNet.length > 0 ? tNet : [0];
+    chartTrendsInstance.update();
+  }
+}
+
 // --- FORM HANDLING ACTIONS ---
 
 // Submit handler to save new sale or update existing
@@ -1056,16 +1279,22 @@ async function handleFormSubmit(e) {
   populatePeriodFilter();
   renderSalesTable();
   renderPayoutsTable();
-  // On mobile: switch to table tab after saving
-  if (window.innerWidth <= 1100) {
-    switchTab('table');
-  }
+  updateCharts();
+
+  // Switch back to Dashboard view after saving
+  switchMainTab('dashboard');
 }
 
 // Edit a sale entry - Populate form with item details
 window.editSale = function(id) {
   const sale = salesData.find(item => item.id === id);
   if (!sale) return;
+
+  // Switch to Input Tab
+  switchMainTab('input');
+
+  const formHeaderTitle = document.getElementById('form-header-title');
+  if (formHeaderTitle) formHeaderTitle.textContent = 'Edit Data Penjualan';
 
   document.getElementById('btn-reset-form').classList.remove('hidden');
   document.getElementById('btn-submit').querySelector('span').textContent = 'Perbarui Transaksi';
@@ -1108,11 +1337,7 @@ window.editSale = function(id) {
   }
 
   updatePreview();
-  // On mobile: switch to form tab so user can see the edit form
-  if (window.innerWidth <= 1100) {
-    switchTab('form');
-  }
-  document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 // Cancel editing a sale, clear values to defaults
@@ -1122,6 +1347,9 @@ function cancelFormEdit() {
   const customRateGroup = document.getElementById('custom-commission-group');
   const resetFormBtn = document.getElementById('btn-reset-form');
   const submitBtnText = document.getElementById('btn-submit').querySelector('span');
+  const formHeaderTitle = document.getElementById('form-header-title');
+
+  if (formHeaderTitle) formHeaderTitle.textContent = 'Input Data Penjualan Baru';
 
   form.reset();
   
@@ -1136,7 +1364,8 @@ function cancelFormEdit() {
 
   // Set date back to today
   const today = new Date();
-  document.getElementById('sale-date').value = today.toISOString().split('T')[0];
+  const dateEl = document.getElementById('sale-date');
+  if (dateEl) dateEl.value = today.toISOString().split('T')[0];
 
   // Recalculate previews
   updatePreview();
