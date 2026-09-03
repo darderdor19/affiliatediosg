@@ -1177,39 +1177,111 @@ function initCharts() {
     });
   }
 
-  // 3. Bar Chart: Penjualan Per Produk
+  // 3. Bar Chart: Penjualan Per Produk — Kuantitas vs Kualitas
   const ctxProducts = document.getElementById('chart-products');
   if (ctxProducts) {
     chartProductsInstance = new Chart(ctxProducts, {
       type: 'bar',
       data: {
         labels: [],
-        datasets: [{
-          label: 'Jumlah Transaksi',
-          data: [],
-          backgroundColor: 'rgba(99, 102, 241, 0.65)',
-          borderColor: '#6366f1',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
+        datasets: [
+          {
+            label: 'Kuantitas (Transaksi)',
+            data: [],
+            backgroundColor: 'rgba(99, 102, 241, 0.75)',
+            borderColor: '#6366f1',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            yAxisID: 'yCount',
+            order: 1
+          },
+          {
+            label: 'Omzet (Harga Deal)',
+            data: [],
+            backgroundColor: 'rgba(16, 185, 129, 0.65)',
+            borderColor: '#10b981',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            yAxisID: 'yRupiah',
+            order: 2
+          },
+          {
+            label: 'Komisi Bersih',
+            data: [],
+            backgroundColor: 'rgba(245, 158, 11, 0.65)',
+            borderColor: '#f59e0b',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            yAxisID: 'yRupiah',
+            order: 3
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { boxWidth: 12, usePointStyle: true, padding: 16, font: { size: 11, weight: '600' } }
+          },
           tooltip: {
             callbacks: {
-              label: (ctx) => `Penjualan: ${ctx.raw} transaksi`
+              label: (ctx) => {
+                if (ctx.datasetIndex === 0) return ` ${ctx.dataset.label}: ${ctx.raw} transaksi`;
+                return ` ${ctx.dataset.label}: ${formatFullRupiah(ctx.raw)}`;
+              }
             }
           }
         },
         scales: {
-          x: { grid: { display: false } },
-          y: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
+          },
+          yCount: {
+            type: 'linear',
+            position: 'left',
             beginAtZero: true,
             grid: { color: 'rgba(255, 255, 255, 0.04)' },
-            ticks: { precision: 0 }
+            ticks: {
+              precision: 0,
+              font: { size: 11 },
+              color: '#6366f1'
+            },
+            title: {
+              display: true,
+              text: 'Jumlah Transaksi',
+              color: '#6366f1',
+              font: { size: 11, weight: '600' }
+            }
+          },
+          yRupiah: {
+            type: 'linear',
+            position: 'right',
+            beginAtZero: true,
+            grid: { drawOnChartArea: false },
+            ticks: {
+              font: { size: 11 },
+              color: '#10b981',
+              callback: (val) => {
+                if (val >= 1000000000) return 'Rp ' + (val / 1000000000).toFixed(1) + 'M';
+                if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(0) + 'jt';
+                if (val >= 1000) return 'Rp ' + (val / 1000).toFixed(0) + 'K';
+                return 'Rp ' + val;
+              }
+            },
+            title: {
+              display: true,
+              text: 'Nilai (Rupiah)',
+              color: '#10b981',
+              font: { size: 11, weight: '600' }
+            }
           }
         }
       }
@@ -1260,19 +1332,34 @@ function updateCharts() {
     chartSharesInstance.update();
   }
 
-  // 2. Update Products Bar Chart
-  const productCounts = {};
+  // 2. Update Products Bar Chart — Kuantitas vs Kualitas
+  const productStats = {};
   filteredSales.forEach(sale => {
     const pName = sale.product || 'Lainnya';
-    productCounts[pName] = (productCounts[pName] || 0) + 1;
+    if (!productStats[pName]) {
+      productStats[pName] = { count: 0, omzet: 0, netComm: 0 };
+    }
+    productStats[pName].count += 1;
+    productStats[pName].omzet += (sale.dealPrice || sale.price || 0);
+    const net = sale.commissionAmount - Math.round(sale.commissionAmount * 0.207);
+    productStats[pName].netComm += net;
   });
 
-  const pLabels = Object.keys(productCounts);
-  const pData = pLabels.map(k => productCounts[k]);
+  // Sort by count descending so highest-selling product appears first
+  const pLabels = Object.keys(productStats).sort((a, b) => productStats[b].count - productStats[a].count);
+  const pCount   = pLabels.map(k => productStats[k].count);
+  const pOmzet   = pLabels.map(k => productStats[k].omzet);
+  const pNetComm = pLabels.map(k => productStats[k].netComm);
+
+  // Shorten labels
+  const pLabelsTrunc = pLabels.map(l => l.length > 20 ? l.substring(0, 18) + '…' : l);
 
   if (chartProductsInstance) {
-    chartProductsInstance.data.labels = pLabels.map(l => l.length > 20 ? l.substring(0, 18) + '...' : l);
-    chartProductsInstance.data.datasets[0].data = pData;
+    if (chartProductsInstance.options.scales.yCount) chartProductsInstance.options.scales.yCount.grid.color = gridColor;
+    chartProductsInstance.data.labels = pLabelsTrunc;
+    chartProductsInstance.data.datasets[0].data = pCount;
+    chartProductsInstance.data.datasets[1].data = pOmzet;
+    chartProductsInstance.data.datasets[2].data = pNetComm;
     chartProductsInstance.update();
   }
 
@@ -1312,11 +1399,6 @@ function updateCharts() {
     chartTrendsInstance.data.datasets[0].data = tOmset.length > 0 ? tOmset : [0];
     chartTrendsInstance.data.datasets[1].data = tNet.length > 0 ? tNet : [0];
     chartTrendsInstance.update();
-  }
-
-  if (chartProductsInstance) {
-    if (chartProductsInstance.options.scales.y) chartProductsInstance.options.scales.y.grid.color = gridColor;
-    chartProductsInstance.update();
   }
 }
 
