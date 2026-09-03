@@ -65,13 +65,12 @@ window.toggleMobileSidebar = function() {
 // --- MAIN TAB NAVIGATION SWITCHER ---
 window.switchMainTab = function(tabName) {
   currentActiveViewTab = tabName;
-  const tabs = ['dashboard', 'sales', 'commission', 'input', 'payout'];
+  const tabs = ['dashboard', 'sales', 'commission', 'input'];
   const titles = {
     'dashboard':  'Dashboard & Analitik',
     'sales':      'Daftar Penjualan',
     'commission': 'Pembagian Komisi',
     'input':      'Tambah Transaksi Penjualan',
-    'payout':     'Status & Ledger Payout'
   };
 
   const headingEl = document.getElementById('page-title-heading');
@@ -989,6 +988,10 @@ function renderSalesTable() {
       const isFTLeads = sale.leadsSource === 'fast-track';
       const leadsBadgeHtml = isFTLeads ? `<span style="display:inline-block; font-size:10px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.12); padding:2px 6px; border-radius:4px; margin-bottom:3px;">⚡ Fast Track (Ndine 10%)</span><br>` : '';
 
+      const leadsCellHtml = isFTLeads
+        ? `<span style="display:inline-block;font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.12);padding:2px 7px;border-radius:4px;">⚡ FT</span>`
+        : `<span style="display:inline-block;font-size:10px;font-weight:600;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px;">Organik</span>`;
+
       row.innerHTML = `
         <td class="table-date">${formatDisplayDate(sale.date)}</td>
         <td>
@@ -1001,8 +1004,8 @@ function renderSalesTable() {
           <div style="font-size: 10px; color: var(--text-muted-dark); font-weight:600; margin-top:2px;">Rate: ${sale.commissionRate}%</div>
         </td>
         <td style="text-align: right;" class="table-commission">${formatNumberRupiah(sale.commissionAmount)}</td>
+        <td style="text-align: center;">${leadsCellHtml}</td>
         <td>
-          ${leadsBadgeHtml}
           <div class="table-description" title="${escapeHTML(sale.description)}">${escapeHTML(sale.description)}</div>
         </td>
         <td>
@@ -1018,14 +1021,16 @@ function renderSalesTable() {
       `;
 
       tbody.appendChild(row);
-    });
   }
 
-  // Update table subtotals
-  subtotalPriceEl.textContent = formatFullRupiah(subtotalPrice);
-  subtotalCommEl.textContent = formatFullRupiah(subtotalCommission);
+  // Update table subtotals (null-safe for elements moved to commission tab)
+  if (subtotalPriceEl) subtotalPriceEl.textContent = formatFullRupiah(subtotalPrice);
+  if (subtotalCommEl)  subtotalCommEl.textContent  = formatFullRupiah(subtotalCommission);
 
-  // Calculate splits for the selected period using per-sale share logic
+  const countEl = document.getElementById('table-summary-count');
+  if (countEl) countEl.textContent = filteredSales.length + ' transaksi';
+
+  // Calculate splits — these elements may or may not exist (moved to commission tab)
   const deduction = Math.round(subtotalCommission * 0.207);
   const netCommission = subtotalCommission - deduction;
 
@@ -1041,13 +1046,13 @@ function renderSalesTable() {
     if (sh.isFastTrack) hasNdineInFilter = true;
   });
 
-  document.getElementById('table-summary-deduction').textContent = `-Rp ${formatNumberRupiah(deduction)}`;
-  document.getElementById('table-summary-net').textContent = formatFullRupiah(netCommission);
-  document.getElementById('table-summary-diosg').textContent = formatFullRupiah(diosgShare);
-  document.getElementById('table-summary-aldi').textContent = formatFullRupiah(aldiShare);
-  document.getElementById('table-summary-joko').textContent = formatFullRupiah(jokoShare);
-  document.getElementById('table-summary-ndine').textContent = formatFullRupiah(ndineShare);
-  // Show/hide Ndine card in table footer
+  const setIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setIfExists('table-summary-deduction', `-Rp ${formatNumberRupiah(deduction)}`);
+  setIfExists('table-summary-net',       formatFullRupiah(netCommission));
+  setIfExists('table-summary-diosg',     formatFullRupiah(diosgShare));
+  setIfExists('table-summary-aldi',      formatFullRupiah(aldiShare));
+  setIfExists('table-summary-joko',      formatFullRupiah(jokoShare));
+  setIfExists('table-summary-ndine',     formatFullRupiah(ndineShare));
   const ndineCard = document.getElementById('summary-share-ndine');
   if (ndineCard) ndineCard.style.display = hasNdineInFilter ? '' : 'none';
   const diosgTableLabel = document.getElementById('label-table-diosg');
