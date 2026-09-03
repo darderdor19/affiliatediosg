@@ -177,8 +177,21 @@ body {
 /* Metrics Dashboard Grid */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  width: 100%;
+}
+
+@media (max-width: 1280px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .metric-card {
@@ -188,8 +201,8 @@ body {
   border-radius: var(--radius-lg);
   padding: 20px 24px;
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  gap: 16px;
   box-shadow: var(--card-shadow);
   transition: transform var(--transition-normal), border-color var(--transition-normal);
   position: relative;
@@ -220,6 +233,13 @@ body {
   border-color: rgba(16, 185, 129, 0.15);
 }
 
+.metric-main-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
 .metric-icon {
   background: rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-md);
@@ -229,6 +249,7 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .metric-card.highlight .metric-icon {
@@ -256,7 +277,7 @@ body {
 }
 
 .metric-value {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.5px;
@@ -277,10 +298,10 @@ body {
 
 /* Main Workspace Grid */
 .main-workspace {
-  display: grid;
-  grid-template-columns: 420px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  align-items: start;
+  width: 100%;
 }
 
 /* Mobile Tab Navigation - hidden on desktop */
@@ -296,10 +317,6 @@ body {
 }
 
 @media (max-width: 1100px) {
-  .main-workspace {
-    grid-template-columns: 1fr;
-  }
-
   /* Show tab nav on mobile/tablet */
   .mobile-tab-nav {
     display: flex;
