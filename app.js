@@ -62,32 +62,27 @@ window.toggleMobileSidebar = function() {
   if (overlay) overlay.classList.toggle('show');
 };
 
-// --- MAIN 3-TAB NAVIGATION SWITCHER ---
+// --- MAIN TAB NAVIGATION SWITCHER ---
 window.switchMainTab = function(tabName) {
   currentActiveViewTab = tabName;
-  const tabs = ['dashboard', 'input', 'payout'];
+  const tabs = ['dashboard', 'sales', 'commission', 'input', 'payout'];
   const titles = {
-    'dashboard': 'Dashboard & Analitik',
-    'input': 'Tambah Transaksi Penjualan',
-    'payout': 'Status & Ledger Payout'
+    'dashboard':  'Dashboard & Analitik',
+    'sales':      'Daftar Penjualan',
+    'commission': 'Pembagian Komisi',
+    'input':      'Tambah Transaksi Penjualan',
+    'payout':     'Status & Ledger Payout'
   };
 
   const headingEl = document.getElementById('page-title-heading');
-  if (headingEl && titles[tabName]) {
-    headingEl.textContent = titles[tabName];
-  }
+  if (headingEl && titles[tabName]) headingEl.textContent = titles[tabName];
 
   tabs.forEach(t => {
     const btn = document.getElementById(`nav-btn-${t}`);
-    const section = document.getElementById(`tab-${t === 'input' ? 'input-sale' : t}`);
-    if (btn) {
-      if (t === tabName) btn.classList.add('active');
-      else btn.classList.remove('active');
-    }
-    if (section) {
-      if (t === tabName) section.classList.add('active');
-      else section.classList.remove('active');
-    }
+    const sectionId = t === 'input' ? 'tab-input-sale' : `tab-${t}`;
+    const section = document.getElementById(sectionId);
+    if (btn) btn.classList.toggle('active', t === tabName);
+    if (section) section.classList.toggle('active', t === tabName);
   });
 
   // Close mobile sidebar if open
@@ -98,8 +93,11 @@ window.switchMainTab = function(tabName) {
 
   if (tabName === 'dashboard') {
     updateDashboard();
-    renderSalesTable();
     updateCharts();
+  } else if (tabName === 'sales') {
+    renderSalesTable();
+  } else if (tabName === 'commission') {
+    renderCommissionTab();
   } else if (tabName === 'payout') {
     renderPayoutsTable();
   }
@@ -1080,6 +1078,110 @@ function calcShares(netCommission, leadsSource) {
     ndine: isFastTrack ? Math.round(netCommission * 0.10) : 0,
     isFastTrack
   };
+}
+
+// --- COMMISSION TAB RENDERER ---
+function renderCommissionTab() {
+  const periodFilterEl = document.getElementById('period-filter');
+  const periodFilter = periodFilterEl ? periodFilterEl.value : 'current';
+  const activePeriod = getActivePeriodLabel();
+
+  let filtered = salesData;
+  if (periodFilter === 'current') {
+    filtered = filtered.filter(s => s.period === activePeriod);
+  } else if (periodFilter !== 'all') {
+    filtered = filtered.filter(s => s.period === periodFilter);
+  }
+
+  const totalChkItems = document.querySelectorAll('.chk-product-item').length;
+  if (selectedProductFilters.length > 0 && selectedProductFilters.length < totalChkItems) {
+    filtered = filtered.filter(s => selectedProductFilters.includes(s.product));
+  } else if (selectedProductFilters.length === 0 && totalChkItems > 0) {
+    filtered = [];
+  }
+
+  let totalGross = 0, totalDeduction = 0, totalNet = 0;
+  let diosgGross = 0, aldiGross = 0, jokoGross = 0, ndineGross = 0;
+  let diosgNet = 0, aldiNet = 0, jokoNet = 0, ndineNet = 0;
+
+  const tbody = document.getElementById('commission-detail-tbody');
+  if (tbody) tbody.innerHTML = '';
+
+  filtered.forEach(sale => {
+    const gross = sale.commissionAmount || 0;
+    const deduction = Math.round(gross * 0.207);
+    const net = gross - deduction;
+    const sh = calcShares(net, sale.leadsSource);
+
+    totalGross += gross;
+    totalDeduction += deduction;
+    totalNet += net;
+    diosgNet += sh.diosg;
+    aldiNet  += sh.aldi;
+    jokoNet  += sh.joko;
+    ndineNet += sh.ndine;
+
+    // Accumulate gross proportionally
+    diosgGross += gross * (sh.isFastTrack ? 0.50 : 0.60);
+    aldiGross  += gross * 0.20;
+    jokoGross  += gross * 0.20;
+    ndineGross += sh.isFastTrack ? gross * 0.10 : 0;
+
+    if (tbody) {
+      const isFT = sale.leadsSource === 'fast-track';
+      const leadsBadge = isFT
+        ? `<span style="font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.12);padding:2px 7px;border-radius:4px;">⚡ Fast Track</span>`
+        : `<span style="font-size:10px;font-weight:600;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px;">Organik</span>`;
+
+      const ndineCell = sh.ndine > 0
+        ? `<td style="text-align:right;" class="text-amber">${formatFullRupiah(sh.ndine)}</td>`
+        : `<td style="text-align:right;color:var(--text-muted-dark);">—</td>`;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="table-date">${formatDisplayDate(sale.date)}</td>
+        <td><div class="table-product">${escapeHTML(sale.product)}</div></td>
+        <td style="text-align:right;">${formatFullRupiah(gross)}</td>
+        <td style="text-align:right;" class="text-danger">-${formatFullRupiah(deduction)}</td>
+        <td style="text-align:right;" class="text-emerald"><strong>${formatFullRupiah(net)}</strong></td>
+        <td style="text-align:center;">${leadsBadge}</td>
+        <td style="text-align:right;">${formatFullRupiah(sh.diosg)}</td>
+        <td style="text-align:right;">${formatFullRupiah(sh.aldi)}</td>
+        <td style="text-align:right;">${formatFullRupiah(sh.joko)}</td>
+        ${ndineCell}
+      `;
+      tbody.appendChild(tr);
+    }
+  });
+
+  if (tbody && filtered.length === 0) {
+    tbody.innerHTML = `<tr class="empty-state"><td colspan="10"><div class="empty-state-content"><p>Belum ada data komisi.</p></div></td></tr>`;
+  }
+
+  // Update member cards
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('comm-diosg-gross',     formatFullRupiah(Math.round(diosgGross)));
+  setEl('comm-diosg-deduction', '-' + formatFullRupiah(Math.round(diosgGross * 0.207)));
+  setEl('comm-diosg-net',       formatFullRupiah(diosgNet));
+  setEl('comm-aldi-gross',      formatFullRupiah(Math.round(aldiGross)));
+  setEl('comm-aldi-deduction',  '-' + formatFullRupiah(Math.round(aldiGross * 0.207)));
+  setEl('comm-aldi-net',        formatFullRupiah(aldiNet));
+  setEl('comm-joko-gross',      formatFullRupiah(Math.round(jokoGross)));
+  setEl('comm-joko-deduction',  '-' + formatFullRupiah(Math.round(jokoGross * 0.207)));
+  setEl('comm-joko-net',        formatFullRupiah(jokoNet));
+  setEl('comm-ndine-gross',     formatFullRupiah(Math.round(ndineGross)));
+  setEl('comm-ndine-deduction', '-' + formatFullRupiah(Math.round(ndineGross * 0.207)));
+  setEl('comm-ndine-net',       formatFullRupiah(ndineNet));
+
+  // Update total banner
+  setEl('comm-total-gross',     formatFullRupiah(totalGross));
+  setEl('comm-total-deduction', '-' + formatFullRupiah(totalDeduction));
+  setEl('comm-total-net',       formatFullRupiah(totalNet));
+  setEl('comm-total-count',     filtered.length + ' transaksi');
+
+  // Show/hide Ndine card
+  const ndineCard = document.getElementById('comm-card-ndine');
+  if (ndineCard) ndineCard.style.display = ndineNet > 0 ? '' : '';
 }
 
 // --- CHART INTEGRATION FUNCTIONS ---
