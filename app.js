@@ -12,6 +12,7 @@ let salesData = [];
 let currentEditingId = null;
 let payoutTransactionsData = [];
 let currentActiveViewTab = 'dashboard';
+let selectedProductFilters = [];
 
 // --- CHART INSTANCES ---
 let chartTrendsInstance = null;
@@ -77,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI components, event listeners and Chart.js immediately
   initEventListeners();
   initCharts();
+  initProductMultiSelect();
   
   // Calculate and update metrics with empty/local data first
   updateDashboard();
@@ -296,12 +298,72 @@ function initEventListeners() {
     updateCharts();
   });
 
-  // Product filter change handler
-  const productFilter = document.getElementById('product-filter');
-  productFilter.addEventListener('change', () => {
-    renderSalesTable();
-    renderPayoutsTable();
+// --- MULTI-SELECT PRODUCT FILTER COMPONENT ---
+function initProductMultiSelect() {
+  const btn = document.getElementById('product-multi-select-btn');
+  const menu = document.getElementById('product-multi-select-menu');
+  const chkAll = document.getElementById('chk-product-all');
+  const chkItems = document.querySelectorAll('.chk-product-item');
+
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('hidden');
   });
+
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  if (chkAll) {
+    chkAll.addEventListener('change', () => {
+      const isChecked = chkAll.checked;
+      chkItems.forEach(item => {
+        item.checked = isChecked;
+      });
+      updateProductFilterState();
+    });
+  }
+
+  chkItems.forEach(item => {
+    item.addEventListener('change', () => {
+      const allChecked = Array.from(chkItems).every(i => i.checked);
+      if (chkAll) chkAll.checked = allChecked;
+      updateProductFilterState();
+    });
+  });
+
+  updateProductFilterState();
+}
+
+function updateProductFilterState() {
+  const chkItems = document.querySelectorAll('.chk-product-item');
+  const selected = [];
+  chkItems.forEach(item => {
+    if (item.checked) selected.push(item.value);
+  });
+
+  selectedProductFilters = selected;
+
+  const label = document.getElementById('product-multi-select-label');
+  if (label) {
+    if (selected.length === 0) {
+      label.textContent = 'Tidak Ada Produk';
+    } else if (chkItems.length > 0 && selected.length === chkItems.length) {
+      label.textContent = 'Semua Produk (' + selected.length + ')';
+    } else if (selected.length === 1) {
+      label.textContent = selected[0];
+    } else {
+      label.textContent = selected.length + ' Produk Terpilih';
+    }
+  }
+
+  renderSalesTable();
+  updateCharts();
+}
 
   // Export to CSV
   exportCsvBtn.addEventListener('click', exportToCSV);
@@ -798,8 +860,6 @@ function renderSalesTable() {
   const subtotalPriceEl = document.getElementById('table-summary-total-price');
   const subtotalCommEl = document.getElementById('table-summary-total-commission');
   
-  const productFilter = document.getElementById('product-filter').value;
-
   let filteredSales = salesData;
 
   // 1. Period Filtering
@@ -809,9 +869,12 @@ function renderSalesTable() {
     filteredSales = filteredSales.filter(sale => sale.period === periodFilter);
   }
 
-  // 1b. Product Filtering
-  if (productFilter !== 'all') {
-    filteredSales = filteredSales.filter(sale => sale.product === productFilter);
+  // 1b. Multi-Select Product Filtering
+  const totalChkItems = document.querySelectorAll('.chk-product-item').length;
+  if (selectedProductFilters.length > 0 && selectedProductFilters.length < totalChkItems) {
+    filteredSales = filteredSales.filter(sale => selectedProductFilters.includes(sale.product));
+  } else if (selectedProductFilters.length === 0 && totalChkItems > 0) {
+    filteredSales = [];
   }
 
   // 2. Search Text Filtering
@@ -1115,6 +1178,13 @@ function updateCharts() {
   let filteredSales = salesData;
   if (targetPeriod !== 'all') {
     filteredSales = filteredSales.filter(sale => sale.period === targetPeriod);
+  }
+
+  const totalChkItems = document.querySelectorAll('.chk-product-item').length;
+  if (selectedProductFilters.length > 0 && selectedProductFilters.length < totalChkItems) {
+    filteredSales = filteredSales.filter(sale => selectedProductFilters.includes(sale.product));
+  } else if (selectedProductFilters.length === 0 && totalChkItems > 0) {
+    filteredSales = [];
   }
 
   // 1. Update Shares Doughnut Chart

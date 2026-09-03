@@ -256,15 +256,39 @@
                   <option value="FAST TRACK AKADEMI MARKETER"></option>
                 </datalist>
               </div>
-              <div class="select-wrapper filter">
-                <select id="product-filter">
-                  <option value="all">Semua Produk</option>
-                  <option value="AKADEMI MARKETER">AKADEMI MARKETER</option>
-                  <option value="AKADEMI CREATOR">AKADEMI CREATOR</option>
-                  <option value="AKADEMI PAJAK">AKADEMI PAJAK</option>
-                  <option value="FAST TRACK AKADEMI CREATOR">FAST TRACK AKADEMI CREATOR</option>
-                  <option value="FAST TRACK AKADEMI MARKETER">FAST TRACK AKADEMI MARKETER</option>
-                </select>
+              <!-- Multi-Select Product Filter Dropdown -->
+              <div class="multi-select-dropdown" id="product-multi-select">
+                <button type="button" class="multi-select-btn" id="product-multi-select-btn">
+                  <span id="product-multi-select-label">Semua Produk</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dropdown-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="multi-select-menu hidden" id="product-multi-select-menu">
+                  <label class="multi-select-option select-all">
+                    <input type="checkbox" id="chk-product-all" checked>
+                    <span>Pilih Semua Produk</span>
+                  </label>
+                  <div class="multi-select-divider"></div>
+                  <label class="multi-select-option">
+                    <input type="checkbox" class="chk-product-item" value="AKADEMI MARKETER" checked>
+                    <span>AKADEMI MARKETER</span>
+                  </label>
+                  <label class="multi-select-option">
+                    <input type="checkbox" class="chk-product-item" value="AKADEMI CREATOR" checked>
+                    <span>AKADEMI CREATOR</span>
+                  </label>
+                  <label class="multi-select-option">
+                    <input type="checkbox" class="chk-product-item" value="AKADEMI PAJAK" checked>
+                    <span>AKADEMI PAJAK</span>
+                  </label>
+                  <label class="multi-select-option">
+                    <input type="checkbox" class="chk-product-item" value="FAST TRACK AKADEMI CREATOR" checked>
+                    <span>FAST TRACK AKADEMI CREATOR</span>
+                  </label>
+                  <label class="multi-select-option">
+                    <input type="checkbox" class="chk-product-item" value="FAST TRACK AKADEMI MARKETER" checked>
+                    <span>FAST TRACK AKADEMI MARKETER</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="toolbar-actions">
