@@ -19,10 +19,64 @@ let chartTrendsInstance = null;
 let chartSharesInstance = null;
 let chartProductsInstance = null;
 
+// --- THEME SWITCHER LOGIC (DARK / LIGHT MODE) ---
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+
+  const sunIcon = document.getElementById('theme-icon-sun');
+  const moonIcon = document.getElementById('theme-icon-moon');
+  const textLabel = document.getElementById('theme-text-label');
+
+  if (theme === 'light') {
+    if (sunIcon) sunIcon.classList.add('hidden');
+    if (moonIcon) moonIcon.classList.remove('hidden');
+    if (textLabel) textLabel.textContent = 'Dark Mode';
+  } else {
+    if (sunIcon) sunIcon.classList.remove('hidden');
+    if (moonIcon) moonIcon.classList.add('hidden');
+    if (textLabel) textLabel.textContent = 'Light Mode';
+  }
+
+  if (typeof updateCharts === 'function') {
+    updateCharts();
+  }
+}
+
+window.toggleTheme = function() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+  showToast(`Mode tampilan diubah ke ${newTheme === 'light' ? 'Terang ☀️' : 'Gelap 🌙'}`);
+};
+
+window.toggleMobileSidebar = function() {
+  const sidebar = document.getElementById('app-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.toggle('show');
+  if (overlay) overlay.classList.toggle('show');
+};
+
 // --- MAIN 3-TAB NAVIGATION SWITCHER ---
 window.switchMainTab = function(tabName) {
   currentActiveViewTab = tabName;
   const tabs = ['dashboard', 'input', 'payout'];
+  const titles = {
+    'dashboard': 'Dashboard & Analitik',
+    'input': 'Tambah Transaksi Penjualan',
+    'payout': 'Status & Ledger Payout'
+  };
+
+  const headingEl = document.getElementById('page-title-heading');
+  if (headingEl && titles[tabName]) {
+    headingEl.textContent = titles[tabName];
+  }
+
   tabs.forEach(t => {
     const btn = document.getElementById(`nav-btn-${t}`);
     const section = document.getElementById(`tab-${t === 'input' ? 'input-sale' : t}`);
@@ -35,6 +89,12 @@ window.switchMainTab = function(tabName) {
       else section.classList.remove('active');
     }
   });
+
+  // Close mobile sidebar if open
+  const sidebar = document.getElementById('app-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('show');
+  if (overlay) overlay.classList.remove('show');
 
   if (tabName === 'dashboard') {
     updateDashboard();
@@ -75,7 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dateEl = document.getElementById('sale-date');
   if (dateEl) dateEl.value = today.toISOString().split('T')[0];
 
-  // Initialize UI components, event listeners and Chart.js immediately
+  // Initialize UI components, theme, event listeners and Chart.js immediately
+  initTheme();
   initEventListeners();
   initCharts();
   initProductMultiSelect();
@@ -1169,6 +1230,12 @@ function initCharts() {
 function updateCharts() {
   if (typeof Chart === 'undefined') return;
 
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const gridColor = isLight ? 'rgba(0, 0, 0, 0.07)' : 'rgba(255, 255, 255, 0.05)';
+  const textColor = isLight ? '#64748b' : '#94a3b8';
+
+  Chart.defaults.color = textColor;
+
   const periodFilterEl = document.getElementById('period-filter');
   const periodFilter = periodFilterEl ? periodFilterEl.value : 'current';
   const activePeriod = getActivePeriodLabel();
@@ -1249,10 +1316,17 @@ function updateCharts() {
   const tNet = sortedPeriods.map(p => periodMap[p].netComm);
 
   if (chartTrendsInstance) {
+    if (chartTrendsInstance.options.scales.x) chartTrendsInstance.options.scales.x.grid.color = gridColor;
+    if (chartTrendsInstance.options.scales.y) chartTrendsInstance.options.scales.y.grid.color = gridColor;
     chartTrendsInstance.data.labels = tLabels.length > 0 ? tLabels : ['Belum Ada Data'];
     chartTrendsInstance.data.datasets[0].data = tOmset.length > 0 ? tOmset : [0];
     chartTrendsInstance.data.datasets[1].data = tNet.length > 0 ? tNet : [0];
     chartTrendsInstance.update();
+  }
+
+  if (chartProductsInstance) {
+    if (chartProductsInstance.options.scales.y) chartProductsInstance.options.scales.y.grid.color = gridColor;
+    chartProductsInstance.update();
   }
 }
 
