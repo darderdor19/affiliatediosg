@@ -359,73 +359,6 @@ function initEventListeners() {
     updateCharts();
   });
 
-// --- MULTI-SELECT PRODUCT FILTER COMPONENT ---
-function initProductMultiSelect() {
-  const btn = document.getElementById('product-multi-select-btn');
-  const menu = document.getElementById('product-multi-select-menu');
-  const chkAll = document.getElementById('chk-product-all');
-  const chkItems = document.querySelectorAll('.chk-product-item');
-
-  if (!btn || !menu) return;
-
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    menu.classList.toggle('hidden');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!menu.contains(e.target) && !btn.contains(e.target)) {
-      menu.classList.add('hidden');
-    }
-  });
-
-  if (chkAll) {
-    chkAll.addEventListener('change', () => {
-      const isChecked = chkAll.checked;
-      chkItems.forEach(item => {
-        item.checked = isChecked;
-      });
-      updateProductFilterState();
-    });
-  }
-
-  chkItems.forEach(item => {
-    item.addEventListener('change', () => {
-      const allChecked = Array.from(chkItems).every(i => i.checked);
-      if (chkAll) chkAll.checked = allChecked;
-      updateProductFilterState();
-    });
-  });
-
-  updateProductFilterState();
-}
-
-function updateProductFilterState() {
-  const chkItems = document.querySelectorAll('.chk-product-item');
-  const selected = [];
-  chkItems.forEach(item => {
-    if (item.checked) selected.push(item.value);
-  });
-
-  selectedProductFilters = selected;
-
-  const label = document.getElementById('product-multi-select-label');
-  if (label) {
-    if (selected.length === 0) {
-      label.textContent = 'Tidak Ada Produk';
-    } else if (chkItems.length > 0 && selected.length === chkItems.length) {
-      label.textContent = 'Semua Produk (' + selected.length + ')';
-    } else if (selected.length === 1) {
-      label.textContent = selected[0];
-    } else {
-      label.textContent = selected.length + ' Produk Terpilih';
-    }
-  }
-
-  renderSalesTable();
-  updateCharts();
-}
-
   // Export to CSV
   exportCsvBtn.addEventListener('click', exportToCSV);
 
@@ -502,6 +435,63 @@ function updateProductFilterState() {
   if (payoutForm) {
     payoutForm.addEventListener('submit', handlePayoutFormSubmit);
   }
+}
+
+// --- MULTI-SELECT PRODUCT FILTER COMPONENT ---
+function initProductMultiSelect() {
+  const btn = document.getElementById('product-multi-select-btn');
+  const menu = document.getElementById('product-multi-select-menu');
+  const chkAll = document.getElementById('chk-product-all');
+  const chkItems = document.querySelectorAll('.chk-product-item');
+
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  if (chkAll) {
+    chkAll.addEventListener('change', () => {
+      const isChecked = chkAll.checked;
+      chkItems.forEach(item => { item.checked = isChecked; });
+      updateProductFilterState();
+    });
+  }
+
+  chkItems.forEach(item => {
+    item.addEventListener('change', () => {
+      const allChecked = Array.from(chkItems).every(i => i.checked);
+      if (chkAll) chkAll.checked = allChecked;
+      updateProductFilterState();
+    });
+  });
+
+  updateProductFilterState();
+}
+
+function updateProductFilterState() {
+  const chkItems = document.querySelectorAll('.chk-product-item');
+  const selected = [];
+  chkItems.forEach(item => { if (item.checked) selected.push(item.value); });
+  selectedProductFilters = selected;
+
+  const label = document.getElementById('product-multi-select-label');
+  if (label) {
+    if (selected.length === 0) label.textContent = 'Tidak Ada Produk';
+    else if (chkItems.length > 0 && selected.length === chkItems.length) label.textContent = 'Semua Produk';
+    else if (selected.length === 1) label.textContent = selected[0];
+    else label.textContent = selected.length + ' Produk Terpilih';
+  }
+
+  renderSalesTable();
+  updateCharts();
 }
 
 // --- UTILITY FUNCTIONS ---

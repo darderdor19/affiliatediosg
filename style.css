@@ -2196,8 +2196,332 @@ select option {
   height: 1px;
   background: var(--border-color);
   margin: 4px 0;
+}/* ==========================================================================
+   LIGHT THEME OVERRIDES — comprehensive overrides for all elements
+   ========================================================================== */
+
+/* Table overrides */
+[data-theme="light"] .data-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
 }
 
+[data-theme="light"] .data-table td {
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
 
+[data-theme="light"] .data-table tbody tr:hover:not(.empty-state) {
+  background-color: #f8fafc;
+}
 
+/* Toolbar overrides */
+[data-theme="light"] .toolbar {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
 
+[data-theme="light"] .btn-tool {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .btn-tool:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .btn-tool svg {
+  color: #64748b;
+}
+
+[data-theme="light"] .btn-danger-tool {
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+}
+
+/* Dropdown menu override */
+[data-theme="light"] .dropdown-menu {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .dropdown-item {
+  color: #374151;
+}
+
+[data-theme="light"] .dropdown-item:hover {
+  background-color: #f1f5f9;
+  color: var(--color-primary);
+}
+
+/* Select option overrides */
+[data-theme="light"] select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Filter period select wrapper */
+[data-theme="light"] .select-wrapper.filter select {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+}
+
+/* Coupon button overrides */
+[data-theme="light"] .coupon-btn-content {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .coupon-btn-content:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .coupon-pct {
+  color: #0f172a;
+}
+
+[data-theme="light"] .coupon-btn input[type="radio"]:checked + .coupon-btn-content .coupon-pct {
+  color: #1e40af;
+}
+
+[data-theme="light"] .coupon-btn input[type="radio"]:checked + .coupon-btn-content .commission-pct {
+  color: #3b82f6;
+}
+
+/* Commission preview card */
+[data-theme="light"] .commission-preview-card {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.06) 0%, rgba(37, 99, 235, 0.03) 100%);
+  border: 1px dashed rgba(5, 150, 105, 0.3);
+}
+
+/* Metric card light overrides */
+[data-theme="light"] .metric-card:hover {
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .metric-card.highlight {
+  background: linear-gradient(145deg, rgba(5, 150, 105, 0.05) 0%, #ffffff 100%);
+  border-color: rgba(5, 150, 105, 0.2);
+}
+
+[data-theme="light"] .metric-icon {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Table coupon badge light overrides */
+[data-theme="light"] .table-coupon-badge {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+[data-theme="light"] .table-coupon-badge.pct-5 {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+[data-theme="light"] .table-coupon-badge.pct-10 {
+  background-color: #ede9fe;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+[data-theme="light"] .table-coupon-badge.pct-15,
+[data-theme="light"] .table-coupon-badge.pct-20,
+[data-theme="light"] .table-coupon-badge.pct-25 {
+  background-color: #fff3cd;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+/* Shares row and breakdown */
+[data-theme="light"] .shares-row .share-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .breakdown-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+[data-theme="light"] .summary-share-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+/* Payout balance cards light overrides */
+[data-theme="light"] .payout-balance-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .payout-balance-card .card-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Chart cards light overrides */
+[data-theme="light"] .chart-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .chart-badge {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Card header light */
+[data-theme="light"] .card-header {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+[data-theme="light"] .card-header-actions {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+[data-theme="light"] .card-divider {
+  border-color: #f1f5f9;
+}
+
+/* Table footer summary light */
+[data-theme="light"] .table-footer-summary {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .summary-breakdown-panel {
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Sidebar light overrides */
+[data-theme="light"] .app-sidebar {
+  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .sidebar-nav-btn.active {
+  color: #ffffff;
+  background: var(--color-primary);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+
+[data-theme="light"] .sidebar-nav-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+[data-theme="light"] .theme-toggle-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+}
+
+[data-theme="light"] .theme-toggle-btn:hover {
+  background: #f1f5f9;
+  border-color: var(--color-primary);
+}
+
+/* Multi-select light overrides */
+[data-theme="light"] .multi-select-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+}
+
+[data-theme="light"] .multi-select-btn:hover {
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .multi-select-menu {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .multi-select-option {
+  color: #374151;
+}
+
+[data-theme="light"] .multi-select-option:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .multi-select-option.select-all {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* Secondary button light */
+[data-theme="light"] .btn-secondary {
+  background-color: #f1f5f9;
+  color: #374151;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Payout workspace light */
+[data-theme="light"] .payout-form-panel,
+[data-theme="light"] .payout-data-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+/* Content top header light */
+[data-theme="light"] .content-top-header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Empty state light */
+[data-theme="light"] .empty-state-content p {
+  color: #475569;
+}
+
+[data-theme="light"] .empty-state-content small {
+  color: #94a3b8;
+}
+
+/* Modal card light */
+[data-theme="light"] .modal-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+/* Focus ring light */
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Btn emerald light */
+[data-theme="light"] .btn-emerald {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+}
+
+/* Text muted dark override for light */
+[data-theme="light"] .text-danger {
+  color: #dc2626 !important;
+}
+
+/* LED source hint light */
+[data-theme="light"] #leads-source-hint {
+  color: #b45309;
+}
