@@ -144,8 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Populate period filter options
   populatePeriodFilter();
 
-  // Initial table render & charts update
+  // Initial table render, commission render & charts update
   renderSalesTable();
+  renderCommissionTab();
   updateCharts();
 
   // Initialize Firebase and load data in the background
@@ -157,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboard();
         populatePeriodFilter();
         renderSalesTable();
+        renderCommissionTab();
         renderPayoutsTable();
         updateCharts();
       }).catch(err => {
@@ -343,48 +345,52 @@ function initEventListeners() {
   // Reset form / Cancel Edit
   resetFormBtn.addEventListener('click', cancelFormEdit);
 
-  // Search input handler (live search)
-  searchInput.addEventListener('input', () => {
-    renderSalesTable();
-    renderPayoutsTable();
-  });
+  // Search input handler (live search) — element lives in tab-sales
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      renderSalesTable();
+    });
+  }
 
-  // Period filter change handler
-  periodFilter.addEventListener('change', () => {
-    renderSalesTable();
-    renderPayoutsTable();
-    updateCharts();
-  });
+  // Period filter change handler — element lives in tab-sales
+  if (periodFilter) {
+    periodFilter.addEventListener('change', () => {
+      renderSalesTable();
+      updateCharts();
+    });
+  }
 
   // Export to CSV
-  exportCsvBtn.addEventListener('click', exportToCSV);
+  if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportToCSV);
 
   // Backup Menu Dropdown Toggle
-  backupMenuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    backupDropdown.classList.toggle('show');
-  });
+  if (backupMenuBtn && backupDropdown) {
+    backupMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      backupDropdown.classList.toggle('show');
+    });
+  }
 
   // Close dropdown menu when clicking outside
   document.addEventListener('click', () => {
-    backupDropdown.classList.remove('show');
+    if (backupDropdown) backupDropdown.classList.remove('show');
   });
 
   // Export backup JSON
-  backupExportBtn.addEventListener('click', exportBackupJSON);
+  if (backupExportBtn) backupExportBtn.addEventListener('click', exportBackupJSON);
 
   // Trigger import file click
-  backupImportBtn.addEventListener('click', () => {
-    fileImportInput.click();
-  });
+  if (backupImportBtn && fileImportInput) {
+    backupImportBtn.addEventListener('click', () => { fileImportInput.click(); });
+  }
 
   // Handle JSON file import
-  fileImportInput.addEventListener('change', handleJSONImport);
+  if (fileImportInput) fileImportInput.addEventListener('change', handleJSONImport);
 
   // Reset current period data button
-  resetDataBtn.addEventListener('click', triggerResetPeriodData);
+  if (resetDataBtn) resetDataBtn.addEventListener('click', triggerResetPeriodData);
 
-  // Product select change handler to lock coupon if needed
+  // Product select change handler
   const productSelect = document.getElementById('sale-product');
   productSelect.addEventListener('change', () => {
     handleProductSelection();
@@ -488,6 +494,7 @@ function updateProductFilterState() {
   }
 
   renderSalesTable();
+  renderCommissionTab();
   updateCharts();
 }
 
@@ -900,14 +907,18 @@ function populatePeriodFilter() {
 // Render the transactional sales table based on filters
 function renderSalesTable() {
   const tbody = document.getElementById('sales-tbody');
-  const searchInput = document.getElementById('search-input').value.toLowerCase();
-  const periodFilter = document.getElementById('period-filter').value;
+  if (!tbody) return; // table not in DOM yet
+
+  const searchEl = document.getElementById('search-input');
+  const periodEl = document.getElementById('period-filter');
+  const searchInput = searchEl ? searchEl.value.toLowerCase() : '';
+  const periodFilter = periodEl ? periodEl.value : 'current';
   const activePeriod = getActivePeriodLabel();
 
   // Summary fields
   const subtotalPriceEl = document.getElementById('table-summary-total-price');
-  const subtotalCommEl = document.getElementById('table-summary-total-commission');
-  
+  const subtotalCommEl  = document.getElementById('table-summary-total-commission');
+
   let filteredSales = salesData;
 
   // 1. Period Filtering
@@ -929,12 +940,11 @@ function renderSalesTable() {
   if (searchInput) {
     filteredSales = filteredSales.filter(sale => {
       const formattedPrice = formatNumberRupiah(sale.price);
-      const formattedComm = formatNumberRupiah(sale.commissionAmount);
-      const displayDate = formatDisplayDate(sale.date);
-      
+      const formattedComm  = formatNumberRupiah(sale.commissionAmount);
+      const displayDate    = formatDisplayDate(sale.date);
       return (
-        sale.product.toLowerCase().includes(searchInput) ||
-        sale.description.toLowerCase().includes(searchInput) ||
+        (sale.product || '').toLowerCase().includes(searchInput) ||
+        (sale.description || '').toLowerCase().includes(searchInput) ||
         getCouponText(sale.coupon).toLowerCase().includes(searchInput) ||
         formattedPrice.includes(searchInput) ||
         formattedComm.includes(searchInput) ||
@@ -953,11 +963,11 @@ function renderSalesTable() {
   if (filteredSales.length === 0) {
     tbody.innerHTML = `
       <tr class="empty-state">
-        <td colspan="7">
+        <td colspan="9">
           <div class="empty-state-content">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <p>Tidak ada transaksi yang cocok dengan pencarian.</p>
-            <small>Coba gunakan kata kunci lain atau ubah filter periode.</small>
+            <p>Belum ada data penjualan untuk periode ini.</p>
+            <small>Tambahkan transaksi via menu "Tambah Transaksi".</small>
           </div>
         </td>
       </tr>
@@ -1021,6 +1031,7 @@ function renderSalesTable() {
       `;
 
       tbody.appendChild(row);
+    });
   }
 
   // Update table subtotals (null-safe for elements moved to commission tab)

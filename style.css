@@ -320,24 +320,134 @@ body {
   z-index: 85;
 }
 
+/* ==========================================================================
+   RESPONSIVE — Multi-device breakpoints
+   ========================================================================== */
+
+/* ── Tablet: hide sidebar, enable mobile hamburger ── */
 @media (max-width: 1024px) {
   .app-sidebar {
     transform: translateX(-100%);
+    width: 260px;
+    z-index: 200;
   }
   .app-sidebar.show {
     transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.35);
   }
   .app-main-content {
     margin-left: 0;
-    padding: 20px 16px;
+    padding: 16px 20px;
+    gap: 20px;
   }
-  .mobile-menu-btn {
-    display: flex;
-  }
-  .sidebar-overlay.show {
-    display: block;
-  }
+  .mobile-menu-btn { display: flex; }
+  .sidebar-overlay.show { display: block; }
+
+  /* Compress header */
+  .header-title-group h2 { font-size: 18px; }
+
+  /* Metrics — 2 columns on tablet */
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+  /* Charts — stack below each other */
+  .charts-section { flex-direction: column; gap: 16px; }
+  .chart-card { width: 100% !important; }
+
+  /* Commission member cards — 2 cols */
+  .commission-members-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Commission banner — 2 cols wrap */
+  .commission-total-banner { gap: 0; flex-wrap: wrap; }
+  .banner-item { min-width: 50%; border-bottom: 1px solid var(--border-color); }
+  .banner-divider { display: none; }
+
+  /* Table horizontal scroll */
+  .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 700px; }
+
+  /* Toolbar responsive */
+  .toolbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .toolbar-left { width: 100%; flex-wrap: wrap; }
+  .toolbar-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .search-wrapper { width: 100%; }
 }
+
+/* ── Mobile: ≤ 640px ── */
+@media (max-width: 640px) {
+  .app-main-content { padding: 12px 14px; gap: 16px; }
+
+  /* Header compact */
+  .content-top-header { flex-wrap: wrap; gap: 10px; }
+  .header-title-group h2 { font-size: 16px; }
+
+  /* Metrics — single column */
+  .metrics-grid { grid-template-columns: 1fr; gap: 12px; }
+  .metric-card { padding: 16px 18px; }
+  .metric-value { font-size: 20px; }
+
+  /* Period/filter badge */
+  .period-badge { font-size: 11px; padding: 6px 12px; }
+
+  /* Charts section */
+  .charts-grid { grid-template-columns: 1fr !important; }
+  .chart-card { min-height: 200px; }
+  .bar-wrapper { height: 220px !important; }
+
+  /* Table: allow wide scroll, small font */
+  .data-table { font-size: 12px; min-width: 580px; }
+  .data-table th, .data-table td { padding: 10px 12px; }
+
+  /* Toolbar */
+  .toolbar { padding: 12px 16px; }
+  .btn-tool, .btn-danger-tool { padding: 7px 10px; font-size: 11px; }
+  .search-wrapper input { font-size: 12px; }
+
+  /* Form stack */
+  .form-grid-two { grid-template-columns: 1fr !important; }
+  .coupon-grid { grid-template-columns: repeat(3, 1fr); }
+  .custom-fields-grid { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column; }
+  .form-actions .btn { width: 100%; }
+  #sale-form { padding: 16px; }
+
+  /* Commission cards — single column */
+  .commission-members-grid { grid-template-columns: 1fr; gap: 12px; }
+  .commission-member-card { padding: 16px; }
+  .member-big-val { font-size: 15px; }
+
+  /* Commission banner — full width stack */
+  .commission-total-banner { padding: 16px; flex-direction: column; gap: 12px; }
+  .banner-item { min-width: 100%; padding: 0; border-bottom: none; }
+  .banner-item strong { font-size: 18px; }
+  .banner-big { font-size: 22px !important; }
+
+  /* Commission filter bar */
+  .commission-filter-title h3 { font-size: 17px; }
+
+  /* Charts area */
+  .charts-section-grid { flex-direction: column; }
+
+  /* Shares row in metric card */
+  .shares-row { flex-wrap: wrap; gap: 8px; }
+  .share-box { flex: 1 1 calc(50% - 4px); min-width: 0; }
+
+  /* Summary share cards */
+  .summary-shares-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Very small: ≤ 380px ── */
+@media (max-width: 380px) {
+  .app-sidebar { width: 240px; }
+  .app-main-content { padding: 10px 10px; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .metric-value { font-size: 18px; }
+  .coupon-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-shares-grid { grid-template-columns: 1fr; }
+  .commission-members-grid { grid-template-columns: 1fr; }
+  .data-table { min-width: 480px; font-size: 11px; }
+  .data-table th, .data-table td { padding: 8px 10px; }
+}
+
 
 .logo-container {
   display: flex;
